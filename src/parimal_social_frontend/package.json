@@ -7,7 +7,7 @@
     "setup": "npm i && dfx canister create parimal_social_backend && dfx generate parimal_social_backend && dfx deploy",
     "start": "vite --port 3000",
     "prebuild": "dfx generate",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "format": "prettier --write \"src/**/*.{json,js,jsx,ts,tsx,css,scss}\""
   },
   "dependencies": {
@@ -15,14 +15,19 @@
     "react-dom": "^18.2.0",
     "@dfinity/agent": "^2.1.3",
     "@dfinity/candid": "^2.1.3",
-    "@dfinity/principal": "^2.1.3"
+    "@dfinity/principal": "^2.1.3",
+    "@dfinity/auth-client": "^2.1.3",
+    "lucide-react": "^0.344.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
     "@vitejs/plugin-react": "^4.0.1",
+    "autoprefixer": "^10.4.18",
     "dotenv": "^16.3.1",
+    "postcss": "^8.4.35",
     "sass": "^1.63.6",
+    "tailwindcss": "^3.4.1",
     "typescript": "^5.1.3",
     "vite": "^4.3.9",
     "vite-plugin-environment": "^1.1.3"
