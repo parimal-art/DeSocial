@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "src/parimal_social_backend"
+]
+resolver = "2"

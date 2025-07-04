@@ -1,0 +1,38 @@
+{
+  "canisters": {
+    "internet_identity": {
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "frontend": {},
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+    },
+    "parimal_social_backend": {
+      "candid": "src/parimal_social_backend/parimal_social_backend.did",
+      "package": "parimal_social_backend",
+      "type": "rust"
+    },
+    "parimal_social_frontend": {
+      "dependencies": [
+        "parimal_social_backend"
+      ],
+      "source": [
+        "src/parimal_social_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "parimal_social_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
