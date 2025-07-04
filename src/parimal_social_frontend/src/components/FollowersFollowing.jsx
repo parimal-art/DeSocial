@@ -85,7 +85,7 @@ const FollowersFollowing = ({ actor, user, onUserProfileView }) => {
               {userData.name}
             </h3>
             <p className="text-gray-500 text-sm">
-              @{userData.principal.toString().slice(-8)}
+              @{userData.user_principal.toString().slice(-8)}
             </p>
             {userData.bio && (
               <p className="text-gray-600 text-sm mt-1 line-clamp-2">
@@ -185,7 +185,7 @@ const FollowersFollowing = ({ actor, user, onUserProfileView }) => {
           {activeTab === 'followers' ? (
             followersData.length > 0 ? (
               followersData.map((userData) => (
-                <UserCard key={userData.principal.toString()} userData={userData} />
+                <UserCard key={userData.user_principal.toString()} userData={userData} />
               ))
             ) : (
               <div className="bg-white rounded-2xl p-12 shadow-sm text-center">
@@ -199,7 +199,7 @@ const FollowersFollowing = ({ actor, user, onUserProfileView }) => {
           ) : (
             followingData.length > 0 ? (
               followingData.map((userData) => (
-                <UserCard key={userData.principal.toString()} userData={userData} />
+                <UserCard key={userData.user_principal.toString()} userData={userData} />
               ))
             ) : (
               <div className="bg-white rounded-2xl p-12 shadow-sm text-center">

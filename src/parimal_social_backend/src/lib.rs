@@ -1,16 +1,16 @@
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::{
     api::{caller, time},
-    export::candid,
     query, update,
 };
-use std::collections::{BTreeMap, HashMap};
+candid::export_service!();
+use std::collections::BTreeMap;
 use std::cell::RefCell;
 
-// Data Structures
+// Data Structures 
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct UserProfile {
-    pub principal: Principal,
+    pub user_principal: Principal,
     pub name: String,
     pub bio: String,
     pub profile_image: String,
@@ -100,20 +100,20 @@ fn get_next_notification_id() -> u64 {
 #[update]
 pub fn register_user(name: String, bio: String, profile_image: String, cover_image: String) -> Result<UserProfile, String> {
     let principal = caller();
-    
+
     if name.trim().is_empty() {
         return Err("Name cannot be empty".to_string());
     }
 
     USERS.with(|users| {
         let mut users = users.borrow_mut();
-        
+
         if users.contains_key(&principal) {
             return Err("User already registered".to_string());
         }
 
         let user_profile = UserProfile {
-            principal,
+            user_principal: principal,
             name,
             bio,
             profile_image,
@@ -129,9 +129,9 @@ pub fn register_user(name: String, bio: String, profile_image: String, cover_ima
 }
 
 #[query]
-pub fn get_user(principal: Principal) -> Option<UserProfile> {
+pub fn get_user(user_principal: Principal) -> Option<UserProfile> {
     USERS.with(|users| {
-        users.borrow().get(&principal).cloned()
+        users.borrow().get(&user_principal).cloned()
     })
 }
 
@@ -144,10 +144,10 @@ pub fn get_current_user() -> Option<UserProfile> {
 #[update]
 pub fn update_profile(name: String, bio: String, profile_image: String, cover_image: String) -> Result<UserProfile, String> {
     let principal = caller();
-    
+
     USERS.with(|users| {
         let mut users = users.borrow_mut();
-        
+
         match users.get_mut(&principal) {
             Some(user) => {
                 user.name = name;
@@ -568,10 +568,9 @@ pub fn get_feed() -> Vec<Post> {
     })
 }
 
-// Export candid interface
-candid::export_service!();
+// use candid::export_service;
 
-#[query(name = "__get_candid_interface_tmp_hack")]
+#[ic_cdk::query(name = "__get_candid_interface_tmp_hack")]
 fn export_candid() -> String {
     __export_service()
 }

@@ -17,7 +17,7 @@ const ExploreUsers = ({ actor, currentUser, onUserProfileView }) => {
       const allUsers = await actor.get_all_users();
       // Filter out current user
       const filteredUsers = allUsers.filter(
-        user => user.principal.toString() !== currentUser.principal.toString()
+        user => user.user_principal.toString() !== currentUser.user_principal.toString()
       );
       setUsers(filteredUsers);
     } catch (error) {
@@ -38,7 +38,7 @@ const ExploreUsers = ({ actor, currentUser, onUserProfileView }) => {
       const searchResults = await actor.search_users(searchQuery);
       // Filter out current user
       const filteredResults = searchResults.filter(
-        user => user.principal.toString() !== currentUser.principal.toString()
+        user => user.user_principal.toString() !== currentUser.user_principal.toString()
       );
       setUsers(filteredResults);
     } catch (error) {
@@ -110,7 +110,7 @@ const ExploreUsers = ({ actor, currentUser, onUserProfileView }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {users.length > 0 ? (
           users.map((user) => (
-            <div key={user.principal.toString()} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
+            <div key={user.user_principal.toString()} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
               {/* Cover Image */}
               <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600 relative">
                 <img
@@ -137,7 +137,7 @@ const ExploreUsers = ({ actor, currentUser, onUserProfileView }) => {
                         {user.name}
                       </h3>
                       <p className="text-gray-500 text-sm mb-2">
-                        @{user.principal.toString().slice(-8)}
+                        @{user.user_principal.toString().slice(-8)}
                       </p>
                       {user.bio && (
                         <p className="text-gray-600 text-sm line-clamp-2">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Camera, FileText, Upload } from 'lucide-react';
+import { User, Camera, Upload } from 'lucide-react';
 
 const CreateProfile = ({ actor, principal, onProfileCreated }) => {
   const [formData, setFormData] = useState({
@@ -19,32 +19,23 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
     }));
   };
 
-  const handleImageUpload = (field) => {
-    // For this demo, we'll use placeholder URLs
-    // In a real app, you'd implement proper image upload to IPFS or similar
-    const sampleImages = {
-      profileImage: [
-        'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1559486/pexels-photo-1559486.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=200'
-      ],
-      coverImage: [
-        'https://images.pexels.com/photos/1565982/pexels-photo-1565982.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/1563356/pexels-photo-1563356.jpeg?auto=compress&cs=tinysrgb&w=800'
-      ]
-    };
-    
-    const randomImage = sampleImages[field][Math.floor(Math.random() * sampleImages[field].length)];
-    setFormData(prev => ({
-      ...prev,
-      [field]: randomImage
-    }));
+  const handleImageUpload = (e, field) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          [field]: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       setError('Name is required');
       return;
@@ -57,8 +48,8 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
       const result = await actor.register_user(
         formData.name,
         formData.bio,
-        formData.profileImage || 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200',
-        formData.coverImage || 'https://images.pexels.com/photos/1565982/pexels-photo-1565982.jpeg?auto=compress&cs=tinysrgb&w=800'
+        formData.profileImage,
+        formData.coverImage
       );
 
       if (result.Ok) {
@@ -78,7 +69,6 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
             <div className="flex items-center">
               <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
@@ -91,7 +81,6 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
             </div>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="p-8">
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
@@ -99,7 +88,6 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
               </div>
             )}
 
-            {/* Profile Image */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Profile Picture
@@ -118,18 +106,19 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
                     </div>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleImageUpload('profileImage')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                >
+                <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center cursor-pointer">
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Image
-                </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, 'profileImage')}
+                    className="hidden"
+                  />
+                </label>
               </div>
             </div>
 
-            {/* Cover Image */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Cover Photo
@@ -147,17 +136,18 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
                   </div>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => handleImageUpload('coverImage')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-              >
+              <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center cursor-pointer">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Cover Photo
-              </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, 'coverImage')}
+                  className="hidden"
+                />
+              </label>
             </div>
 
-            {/* Name */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Display Name *
@@ -173,7 +163,6 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
               />
             </div>
 
-            {/* Bio */}
             <div className="mb-8">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Bio
@@ -188,7 +177,6 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
               />
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}

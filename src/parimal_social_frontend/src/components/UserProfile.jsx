@@ -82,7 +82,7 @@ const UserProfile = ({ actor, userId, currentUser, onUserProfileView }) => {
     );
   }
 
-  const isOwnProfile = user.principal.toString() === currentUser.principal.toString();
+  const isOwnProfile = user.user_principal.toString() === currentUser.user_principal.toString();
 
   return (
     <div className="p-4 lg:p-6">
@@ -120,7 +120,7 @@ const UserProfile = ({ actor, userId, currentUser, onUserProfileView }) => {
 
             <div className="mt-4">
               <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
-              <p className="text-gray-500 text-lg">@{user.principal.toString().slice(-8)}</p>
+              <p className="text-gray-500 text-lg">@{user.user_principal.toString().slice(-8)}</p>
               
               {user.bio && (
                 <p className="text-gray-700 mt-4 text-lg leading-relaxed">{user.bio}</p>

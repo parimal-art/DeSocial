@@ -129,7 +129,7 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
               />
               <div className="ml-3">
                 <h3 className="font-semibold text-gray-900">{user.name}</h3>
-                <p className="text-sm text-gray-500">@{user.principal.toString().slice(-8)}</p>
+                <p className="text-sm text-gray-500">@{user.user_principal.toString().slice(-8)}</p>
               </div>
             </div>
             <div className="mt-4 flex space-x-4 text-sm text-gray-500">
