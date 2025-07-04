@@ -20,32 +20,24 @@ const EditProfile = ({ actor, user, onUserUpdate }) => {
     }));
   };
 
-  const handleImageUpload = (field) => {
-    const sampleImages = {
-      profileImage: [
-        'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1559486/pexels-photo-1559486.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=200',
-        'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?auto=compress&cs=tinysrgb&w=200'
-      ],
-      coverImage: [
-        'https://images.pexels.com/photos/1565982/pexels-photo-1565982.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/1563356/pexels-photo-1563356.jpeg?auto=compress&cs=tinysrgb&w=800',
-        'https://images.pexels.com/photos/2662116/pexels-photo-2662116.jpeg?auto=compress&cs=tinysrgb&w=800'
-      ]
+  const handleImageUpload = (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({
+        ...prev,
+        [field]: reader.result
+      }));
     };
-    
-    const randomImage = sampleImages[field][Math.floor(Math.random() * sampleImages[field].length)];
-    setFormData(prev => ({
-      ...prev,
-      [field]: randomImage
-    }));
+
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       setError('Name is required');
       return;
@@ -81,13 +73,11 @@ const EditProfile = ({ actor, user, onUserUpdate }) => {
     <div className="p-4 lg:p-6">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-          {/* Header */}
           <div className="p-6 border-b border-gray-100">
             <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
             <p className="text-gray-600 mt-1">Update your profile information</p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="p-6">
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
@@ -107,18 +97,20 @@ const EditProfile = ({ actor, user, onUserUpdate }) => {
                 Cover Photo
               </label>
               <div className="w-full h-48 rounded-xl overflow-hidden bg-gray-100 border-2 border-gray-200 mb-3 relative">
-                <img 
-                  src={formData.coverImage} 
-                  alt="Cover" 
+                <img
+                  src={formData.coverImage}
+                  alt="Cover"
                   className="w-full h-full object-cover"
                 />
-                <button
-                  type="button"
-                  onClick={() => handleImageUpload('coverImage')}
-                  className="absolute bottom-4 right-4 p-2 bg-black bg-opacity-50 text-white rounded-lg hover:bg-opacity-70 transition-all"
-                >
+                <label className="absolute bottom-4 right-4 p-2 bg-black bg-opacity-50 text-white rounded-lg hover:bg-opacity-70 transition-all cursor-pointer">
                   <Camera className="h-5 w-5" />
-                </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, 'coverImage')}
+                    className="hidden"
+                  />
+                </label>
               </div>
             </div>
 
@@ -130,29 +122,33 @@ const EditProfile = ({ actor, user, onUserUpdate }) => {
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
-                    <img 
-                      src={formData.profileImage} 
-                      alt="Profile" 
+                    <img
+                      src={formData.profileImage}
+                      alt="Profile"
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleImageUpload('profileImage')}
-                    className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg"
-                  >
+                  <label className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg cursor-pointer">
                     <Camera className="h-4 w-4" />
-                  </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'profileImage')}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
                 <div>
-                  <button
-                    type="button"
-                    onClick={() => handleImageUpload('profileImage')}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center"
-                  >
+                  <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center cursor-pointer">
                     <Upload className="h-4 w-4 mr-2" />
                     Change Photo
-                  </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'profileImage')}
+                      className="hidden"
+                    />
+                  </label>
                   <p className="text-sm text-gray-500 mt-1">Click to upload a new photo</p>
                 </div>
               </div>

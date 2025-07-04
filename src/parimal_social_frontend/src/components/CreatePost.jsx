@@ -9,31 +9,31 @@ const CreatePost = ({ actor, onPostCreated }) => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('text');
 
-  const handleImageUpload = () => {
-    // For demo purposes, use sample images
-    const sampleImages = [
-      'https://images.pexels.com/photos/2662116/pexels-photo-2662116.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1563356/pexels-photo-1563356.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1565982/pexels-photo-1565982.jpeg?auto=compress&cs=tinysrgb&w=800'
-    ];
-    const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
-    setImage(randomImage);
-    setActiveTab('image');
-  };
+  const handleFileUpload = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const handleVideoUpload = () => {
-    // For demo purposes, use sample videos
-    const sampleVideos = [
-      'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
-    ];
-    setVideo(sampleVideos[0]);
-    setActiveTab('video');
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (type === 'image') {
+        setImage(reader.result);
+        setActiveTab('image');
+      } else if (type === 'video') {
+        setVideo(reader.result);
+        setActiveTab('video');
+      }
+    };
+
+    if (type === 'image') {
+      reader.readAsDataURL(file);
+    } else if (type === 'video') {
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!content.trim() && !image && !video) {
       setError('Please add some content, an image, or a video');
       return;
@@ -75,42 +75,26 @@ const CreatePost = ({ actor, onPostCreated }) => {
             <p className="text-gray-600 mt-1">Share your thoughts with the world</p>
           </div>
 
-          {/* Content Tabs */}
+          {/* Tabs */}
           <div className="border-b border-gray-100">
             <div className="flex">
-              <button
-                onClick={() => setActiveTab('text')}
-                className={`flex-1 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'text'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Type className="h-4 w-4 inline mr-2" />
-                Text
-              </button>
-              <button
-                onClick={() => setActiveTab('image')}
-                className={`flex-1 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'image'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <ImageIcon className="h-4 w-4 inline mr-2" />
-                Image
-              </button>
-              <button
-                onClick={() => setActiveTab('video')}
-                className={`flex-1 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'video'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Video className="h-4 w-4 inline mr-2" />
-                Video
-              </button>
+              {['text', 'image', 'video'].map((tab) => {
+                const Icon = tab === 'text' ? Type : tab === 'image' ? ImageIcon : Video;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                      activeTab === tab
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 inline mr-2" />
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -155,15 +139,17 @@ const CreatePost = ({ actor, onPostCreated }) => {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleImageUpload}
-                    className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                  >
+                  <label className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer">
                     <Upload className="h-12 w-12 text-gray-400 mb-4" />
                     <span className="text-gray-600 font-medium">Click to upload image</span>
-                    <span className="text-gray-500 text-sm mt-1">(Demo: Random sample image)</span>
-                  </button>
+                    <span className="text-gray-500 text-sm mt-1">(Supported: JPG, PNG)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'image')}
+                      className="hidden"
+                    />
+                  </label>
                 )}
               </div>
             )}
@@ -190,15 +176,17 @@ const CreatePost = ({ actor, onPostCreated }) => {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleVideoUpload}
-                    className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                  >
+                  <label className="w-full h-64 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer">
                     <Upload className="h-12 w-12 text-gray-400 mb-4" />
                     <span className="text-gray-600 font-medium">Click to upload video</span>
-                    <span className="text-gray-500 text-sm mt-1">(Demo: Sample video)</span>
-                  </button>
+                    <span className="text-gray-500 text-sm mt-1">(MP4 preferred)</span>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => handleFileUpload(e, 'video')}
+                      className="hidden"
+                    />
+                  </label>
                 )}
               </div>
             )}
