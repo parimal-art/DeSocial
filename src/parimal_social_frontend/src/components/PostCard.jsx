@@ -1,21 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Repeat2, Share, MoreHorizontal } from 'lucide-react';
-import CommentBox from './CommentBox';
-import FollowButton from './FollowButton';
+import { MessageCircle, MoreHorizontal, Repeat2, Share } from "lucide-react";
+import { memo, useEffect, useState } from "react";
+import CommentBox from "./CommentBox";
+import FollowButton from "./FollowButton";
+import LikeButton from "./LikeButton";
 
-const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate }) => {
+const PostCard = ({
+  post,
+  actor,
+  currentUser,
+  onUserProfileView,
+  onPostUpdate,
+}) => {
   const [postAuthor, setPostAuthor] = useState(null);
   const [originalAuthor, setOriginalAuthor] = useState(null);
   const [showComments, setShowComments] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     loadPostAuthor();
-    setIsLiked(post.likes.some(p => p.toString() === currentUser.user_principal.toString()));
-    setLikesCount(post.likes.length);
-  }, [post, currentUser]);
+  }, [post.post_id]); // Only re-run when post ID changes, not on every currentUser change
 
   const loadPostAuthor = async () => {
     try {
@@ -27,7 +30,9 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
       // If this is a repost, load the original author
       if (post.original_post_id && post.reposted_by) {
         const originalPost = await actor.get_all_posts();
-        const original = originalPost.find(p => p.post_id === post.original_post_id[0]);
+        const original = originalPost.find(
+          (p) => p.post_id === post.original_post_id[0]
+        );
         if (original) {
           const origAuthor = await actor.get_user(original.author);
           if (origAuthor[0]) {
@@ -36,31 +41,13 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
         }
       }
     } catch (error) {
-      console.error('Error loading post author:', error);
-    }
-  };
-
-  const handleLike = async () => {
-    if (processing) return;
-    
-    setProcessing(true);
-    try {
-      const result = await actor.like_post(post.post_id);
-      if (result.Ok) {
-        setIsLiked(!isLiked);
-        setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
-        if (onPostUpdate) onPostUpdate();
-      }
-    } catch (error) {
-      console.error('Error liking post:', error);
-    } finally {
-      setProcessing(false);
+      console.error("Error loading post author:", error);
     }
   };
 
   const handleRepost = async () => {
     if (processing) return;
-    
+
     setProcessing(true);
     try {
       const result = await actor.repost_post(post.post_id);
@@ -70,7 +57,7 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
         alert(result.Err);
       }
     } catch (error) {
-      console.error('Error reposting:', error);
+      console.error("Error reposting:", error);
     } finally {
       setProcessing(false);
     }
@@ -78,7 +65,11 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
 
   const formatDate = (timestamp) => {
     const date = new Date(Number(timestamp) / 1000000);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return (
+      date.toLocaleDateString() +
+      " " +
+      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    );
   };
 
   if (!postAuthor) {
@@ -103,7 +94,7 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
           <div className="flex items-center text-sm text-gray-500">
             <Repeat2 className="h-4 w-4 mr-2" />
             <span>
-              Reposted by{' '}
+              Reposted by{" "}
               <button
                 onClick={() => onUserProfileView(post.reposted_by)}
                 className="font-medium text-blue-600 hover:underline"
@@ -120,11 +111,21 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center flex-1">
             <button
-              onClick={() => onUserProfileView(originalAuthor ? originalAuthor.principal : postAuthor.principal)}
+              onClick={() =>
+                onUserProfileView(
+                  originalAuthor
+                    ? originalAuthor.principal
+                    : postAuthor.principal
+                )
+              }
               className="flex-shrink-0"
             >
               <img
-                src={originalAuthor ? originalAuthor.profile_image : postAuthor.profile_image}
+                src={
+                  originalAuthor
+                    ? originalAuthor.profile_image
+                    : postAuthor.profile_image
+                }
                 alt={originalAuthor ? originalAuthor.name : postAuthor.name}
                 className="h-12 w-12 rounded-full object-cover border-2 border-gray-100 hover:border-blue-300 transition-colors"
               />
@@ -132,24 +133,43 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
             <div className="ml-3 flex-1">
               <div className="flex items-center">
                 <button
-                  onClick={() => onUserProfileView(originalAuthor ? originalAuthor.principal : postAuthor.principal)}
+                  onClick={() =>
+                    onUserProfileView(
+                      originalAuthor
+                        ? originalAuthor.principal
+                        : postAuthor.principal
+                    )
+                  }
                   className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
                 >
                   {originalAuthor ? originalAuthor.name : postAuthor.name}
                 </button>
                 <span className="ml-2 text-sm text-gray-500">
-                  @{(originalAuthor ? originalAuthor.user_principal : postAuthor.user_principal).toString().slice(-8)}
+                  @
+                  {(originalAuthor
+                    ? originalAuthor.user_principal
+                    : postAuthor.user_principal
+                  )
+                    .toString()
+                    .slice(-8)}
                 </span>
               </div>
               <div className="flex items-center mt-1">
                 <time className="text-sm text-gray-500">
                   {formatDate(post.created_at)}
                 </time>
-                {(originalAuthor ? originalAuthor.user_principal : postAuthor.user_principal).toString() !== currentUser.user_principal.toString() && (
+                {(originalAuthor
+                  ? originalAuthor.user_principal
+                  : postAuthor.user_principal
+                ).toString() !== currentUser.user_principal.toString() && (
                   <div className="ml-3">
                     <FollowButton
                       actor={actor}
-                      targetUserId={originalAuthor ? originalAuthor.user_principal : postAuthor.user_principal}
+                      targetUserId={
+                        originalAuthor
+                          ? originalAuthor.user_principal
+                          : postAuthor.user_principal
+                      }
                       size="sm"
                     />
                   </div>
@@ -165,9 +185,11 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
         {/* Post Content */}
         <div className="mb-4">
           {post.content && (
-            <p className="text-gray-900 text-base leading-relaxed mb-4">{post.content}</p>
+            <p className="text-gray-900 text-base leading-relaxed mb-4">
+              {post.content}
+            </p>
           )}
-          
+
           {post.image && post.image[0] && (
             <div className="rounded-xl overflow-hidden mb-4">
               <img
@@ -177,7 +199,7 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
               />
             </div>
           )}
-          
+
           {post.video && post.video[0] && (
             <div className="rounded-xl overflow-hidden mb-4">
               <video
@@ -191,18 +213,12 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
 
         {/* Post Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-          <button
-            onClick={handleLike}
-            disabled={processing}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ${
-              isLiked
-                ? 'text-red-600 bg-red-50 hover:bg-red-100'
-                : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
-            } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
-            <span className="text-sm font-medium">{likesCount}</span>
-          </button>
+          <LikeButton
+            post={post}
+            actor={actor}
+            currentUser={currentUser}
+            onPostUpdate={onPostUpdate}
+          />
 
           <button
             onClick={() => setShowComments(!showComments)}
@@ -216,7 +232,7 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
             onClick={handleRepost}
             disabled={processing}
             className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-gray-500 hover:text-green-600 hover:bg-green-50 ${
-              processing ? 'opacity-50 cursor-not-allowed' : ''
+              processing ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
             <Repeat2 className="h-5 w-5" />
@@ -246,4 +262,15 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
   );
 };
 
-export default PostCard;
+// Custom comparison function to prevent unnecessary re-renders
+const areEqual = (prevProps, nextProps) => {
+  return (
+    prevProps.post.post_id === nextProps.post.post_id &&
+    prevProps.post.likes.length === nextProps.post.likes.length &&
+    prevProps.post.comments.length === nextProps.post.comments.length &&
+    prevProps.currentUser.user_principal.toString() ===
+      nextProps.currentUser.user_principal.toString()
+  );
+};
+
+export default memo(PostCard, areEqual);
