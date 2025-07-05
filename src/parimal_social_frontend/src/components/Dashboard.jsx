@@ -106,10 +106,10 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
         </div>
       </div>
 
-      <div className="flex">
+      <div className="flex h-screen overflow-hidden">
         {/* Sidebar */}
-        <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:shadow-none border-r transition-transform duration-300 ease-in-out`}>
-          {/* Desktop Header */}
+          <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:shadow-none border-r transition-transform duration-300 ease-in-out overflow-y-hidden flex flex-col h-screen`}>
+            {/* Desktop Header */}
           <div className="hidden lg:block p-6 border-b">
             <div className="flex items-center">
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-xl">
@@ -179,7 +179,7 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 lg:ml-0">
+        <div className="flex-1 lg:ml-0 overflow-y-auto">
           <div className="max-w-4xl mx-auto">
             {renderContent()}
           </div>
