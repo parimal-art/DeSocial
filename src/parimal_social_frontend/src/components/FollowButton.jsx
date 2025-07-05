@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Principal } from '@dfinity/principal';
 import { UserPlus, UserMinus } from 'lucide-react';
 
 const FollowButton = ({ actor, targetUserId, size = 'md' }) => {
@@ -6,38 +7,52 @@ const FollowButton = ({ actor, targetUserId, size = 'md' }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!targetUserId) return;
     checkFollowStatus();
   }, [targetUserId]);
 
   const checkFollowStatus = async () => {
     try {
-      const following = await actor.is_following(targetUserId);
+      const normalizedPrincipal = typeof targetUserId === 'string'
+        ? Principal.fromText(targetUserId)
+        : targetUserId?._isPrincipal
+          ? targetUserId
+          : Principal.fromText(targetUserId.toString());
+  
+      const following = await actor.is_following(normalizedPrincipal);
       setIsFollowing(following);
     } catch (error) {
       console.error('Error checking follow status:', error);
     }
-  };
+  };  
 
   const handleFollow = async () => {
-    if (loading) return;
-    
+    if (loading || !targetUserId) return;
     setLoading(true);
+  
     try {
-      const result = isFollowing 
-        ? await actor.unfollow_user(targetUserId)
-        : await actor.follow_user(targetUserId);
-      
+      const principal = typeof targetUserId === 'string'
+        ? Principal.fromText(targetUserId)
+        : targetUserId?._isPrincipal
+          ? targetUserId
+          : Principal.fromText(targetUserId.toString());
+  
+      const result = isFollowing
+        ? await actor.unfollow_user(principal)
+        : await actor.follow_user(principal);
+  
+      console.log('👥 Follow/unfollow result:', result);
       if (result.Ok) {
         setIsFollowing(!isFollowing);
       } else {
-        alert(result.Err);
+        alert(result.Err || "Error occurred");
       }
     } catch (error) {
-      console.error('Error updating follow status:', error);
+      console.error('❌ Error updating follow status:', error);
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   const sizeClasses = {
     sm: 'px-3 py-1 text-xs',

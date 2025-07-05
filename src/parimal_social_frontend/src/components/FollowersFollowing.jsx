@@ -20,8 +20,8 @@ const FollowersFollowing = ({ actor, user, onUserProfileView }) => {
       
       // Get followers and following lists
       const [followersPrincipals, followingPrincipals] = await Promise.all([
-        actor.get_followers(user.principal),
-        actor.get_following(user.principal)
+        actor.get_followers(user.user_principal),
+        actor.get_following(user.user_principal)
       ]);
 
       setFollowers(followersPrincipals);
@@ -66,7 +66,7 @@ const FollowersFollowing = ({ actor, user, onUserProfileView }) => {
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
       <div className="flex items-center space-x-4">
         <button
-          onClick={() => onUserProfileView(userData.principal)}
+          onClick={() => onUserProfileView(userData.user_principal)}
           className="flex-shrink-0"
         >
           <img
@@ -78,7 +78,7 @@ const FollowersFollowing = ({ actor, user, onUserProfileView }) => {
         
         <div className="flex-1 min-w-0">
           <button
-            onClick={() => onUserProfileView(userData.principal)}
+            onClick={() => onUserProfileView(userData.user_principal)}
             className="text-left"
           >
             <h3 className="font-semibold text-gray-900 hover:text-blue-600 transition-colors">
@@ -103,7 +103,7 @@ const FollowersFollowing = ({ actor, user, onUserProfileView }) => {
         <div className="flex-shrink-0">
           <FollowButton
             actor={actor}
-            targetUserId={userData.principal}
+            targetUserId={userData.user_principal}
             size="md"
           />
         </div>

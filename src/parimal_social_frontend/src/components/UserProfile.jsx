@@ -111,7 +111,7 @@ const UserProfile = ({ actor, userId, currentUser, onUserProfileView }) => {
                 <div className="mb-4">
                   <FollowButton
                     actor={actor}
-                    targetUserId={user.principal}
+                    targetUserId={user.user_principal}
                     size="lg"
                   />
                 </div>

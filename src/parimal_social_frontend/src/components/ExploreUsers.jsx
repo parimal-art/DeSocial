@@ -124,7 +124,7 @@ const ExploreUsers = ({ actor, currentUser, onUserProfileView }) => {
               <div className="p-6 -mt-8 relative">
                 <div className="flex items-start justify-between">
                   <button
-                    onClick={() => onUserProfileView(user.principal)}
+                    onClick={() => onUserProfileView(user.user_principal)}
                     className="flex items-start space-x-4 flex-1"
                   >
                     <img
@@ -150,7 +150,7 @@ const ExploreUsers = ({ actor, currentUser, onUserProfileView }) => {
                   <div className="ml-4">
                     <FollowButton
                       actor={actor}
-                      targetUserId={user.principal}
+                      targetUserId={user.user_principal}
                       size="md"
                     />
                   </div>
