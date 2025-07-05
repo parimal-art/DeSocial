@@ -114,7 +114,7 @@ const ExploreUsers = ({ actor, currentUser, onUserProfileView }) => {
               {/* Cover Image */}
               <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600 relative">
                 <img
-                  src={user.cover_image || 'https://upload.wikimedia.org/wikipedia/commons/b/b9/No_Cover.jpg'}
+                  src={user.cover_image || '/no-cover.jpg'}
                   alt="Cover"
                   className="w-full h-full object-cover"
                 />
@@ -128,7 +128,7 @@ const ExploreUsers = ({ actor, currentUser, onUserProfileView }) => {
                     className="flex items-start space-x-4 flex-1"
                   >
                     <img
-                      src={user.profile_image  || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'}
+                      src={user.profile_image  || "/no-profile.jpg"}
                       alt={user.name}
                       className="h-16 w-16 rounded-full object-cover border-4 border-white shadow-md hover:shadow-lg transition-shadow"
                     />

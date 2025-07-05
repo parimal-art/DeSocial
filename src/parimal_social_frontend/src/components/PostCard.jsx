@@ -156,9 +156,11 @@ const PostCard = ({
             >
               <img
                 src={
-                  displayAuthor.profile_image === ""
-                    ? "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-                    : displayAuthor.profile_image
+                  ((originalAuthor
+                    ? originalAuthor.profile_image
+                    : postAuthor.profile_image) === "" )?("/no-profile.jpg"):(originalAuthor
+                    ? originalAuthor.profile_image
+                    : postAuthor.profile_image )
                 }
                 alt={displayAuthor.name}
                 className="h-12 w-12 rounded-full object-cover border-2 border-gray-100 hover:border-blue-300"

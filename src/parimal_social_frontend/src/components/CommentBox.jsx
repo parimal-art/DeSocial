@@ -66,7 +66,7 @@ const CommentBox = ({ actor, postId, comments, currentUser, onCommentAdded, onUs
                 className="flex-shrink-0"
               >
                 <img
-                  src={author?.profile_image || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'}
+                  src={author?.profile_image || "/no-profile.jpg"}
                   alt={author?.name || 'User'}
                   className="h-8 w-8 rounded-full object-cover border border-gray-200 hover:border-blue-300 transition-colors"
                 />
@@ -93,7 +93,7 @@ const CommentBox = ({ actor, postId, comments, currentUser, onCommentAdded, onUs
       {/* Add Comment Form */}
       <form onSubmit={handleSubmit} className="flex space-x-3">
         <img
-          src={currentUser.profile_image}
+          src={currentUser.profile_image || "/no-profile.jpg"}
           alt={currentUser.name}
           className="h-8 w-8 rounded-full object-cover border border-gray-200 flex-shrink-0"
         />

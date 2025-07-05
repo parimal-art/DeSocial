@@ -98,7 +98,7 @@ const EditProfile = ({ actor, user, onUserUpdate }) => {
               </label>
               <div className="w-full h-48 rounded-xl overflow-hidden bg-gray-100 border-2 border-gray-200 mb-3 relative">
                 <img
-                  src={formData.coverImage || 'https://upload.wikimedia.org/wikipedia/commons/b/b9/No_Cover.jpg'}
+                  src={formData.coverImage || '/no-cover.jpg'}
                   alt="Cover"
                   className="w-full h-full object-cover"
                 />
@@ -123,9 +123,7 @@ const EditProfile = ({ actor, user, onUserUpdate }) => {
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
                     <img
-                      src={formData.profileImage === ""
-                ? "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-                : formData.profileImage}
+                      src={formData.profileImage || "/no-profile.jpg"}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />
