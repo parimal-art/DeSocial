@@ -138,8 +138,8 @@ const PostCard = ({
                   onClick={() =>
                     onUserProfileView(
                       originalAuthor
-                        ? originalAuthor.principal
-                        : postAuthor.principal
+                        ? originalAuthor.user_principal
+                        : postAuthor.user_principal
                     )
                   }
                   className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"

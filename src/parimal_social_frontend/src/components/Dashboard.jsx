@@ -183,7 +183,10 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
 
           {/* User Info */}
           <div className="p-6">
-            <div className="flex items-center">
+            <div
+              className="flex items-center cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+              onClick={() => handleUserProfileView(user.user_principal)}
+            >
               <img
                 src={
                   user.profile_image === ""
