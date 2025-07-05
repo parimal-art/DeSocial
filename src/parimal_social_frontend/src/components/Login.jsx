@@ -1,5 +1,4 @@
-import React from 'react';
-import { Users, Shield, Globe, Zap } from 'lucide-react';
+import { Globe, Shield, Users, Zap } from "lucide-react";
 
 const Login = ({ onLogin }) => {
   return (
@@ -17,31 +16,39 @@ const Login = ({ onLogin }) => {
                   Parimal Social
                 </h1>
               </div>
-              
+
               <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-                Connect on the 
+                Connect on the
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                  {" "}Decentralized{" "}
+                  {" "}
+                  Decentralized{" "}
                 </span>
                 Web
               </h2>
-              
+
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Experience true ownership of your data and connections. Built on the Internet Computer for maximum privacy and security.
+                Experience true ownership of your data and connections. Built on
+                the Internet Computer for maximum privacy and security.
               </p>
 
               <div className="grid grid-cols-1 gap-4 mb-8">
                 <div className="flex items-center p-4 bg-white/50 rounded-xl backdrop-blur-sm">
                   <Shield className="h-6 w-6 text-blue-600 mr-3" />
-                  <span className="text-gray-700">Secure Internet Identity Authentication</span>
+                  <span className="text-gray-700">
+                    Secure Internet Identity Authentication
+                  </span>
                 </div>
                 <div className="flex items-center p-4 bg-white/50 rounded-xl backdrop-blur-sm">
                   <Globe className="h-6 w-6 text-purple-600 mr-3" />
-                  <span className="text-gray-700">Decentralized Data Ownership</span>
+                  <span className="text-gray-700">
+                    Decentralized Data Ownership
+                  </span>
                 </div>
                 <div className="flex items-center p-4 bg-white/50 rounded-xl backdrop-blur-sm">
                   <Zap className="h-6 w-6 text-indigo-600 mr-3" />
-                  <span className="text-gray-700">Lightning Fast Performance</span>
+                  <span className="text-gray-700">
+                    Lightning Fast Performance
+                  </span>
                 </div>
               </div>
             </div>
@@ -69,28 +76,12 @@ const Login = ({ onLogin }) => {
                   <Shield className="h-5 w-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
                   Login with Internet Identity
                 </button>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">or</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={onLogin}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center group"
-                >
-                  <Users className="h-5 w-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                  Login with Another Internet Identity
-                </button>
               </div>
 
               <div className="mt-8 text-center">
                 <p className="text-sm text-gray-500">
-                  By continuing, you agree to our Terms of Service and Privacy Policy
+                  By continuing, you agree to our Terms of Service and Privacy
+                  Policy
                 </p>
               </div>
             </div>
