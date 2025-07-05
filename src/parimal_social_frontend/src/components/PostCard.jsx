@@ -149,7 +149,7 @@ const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate })
                   <div className="ml-3">
                     <FollowButton
                       actor={actor}
-                      targetUserId={originalAuthor ? originalAuthor.principal : postAuthor.principal}
+                      targetUserId={originalAuthor ? originalAuthor.user_principal : postAuthor.user_principal}
                       size="sm"
                     />
                   </div>
