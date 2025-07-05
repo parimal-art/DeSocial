@@ -1,4 +1,4 @@
-import { MessageCircle, MoreHorizontal, Repeat2, Share } from "lucide-react";
+import { MessageCircle, MoreHorizontal, Repeat2 } from "lucide-react";
 import { memo, useEffect, useState } from "react";
 import CommentBox from "./CommentBox";
 import FollowButton from "./FollowButton";
@@ -15,6 +15,7 @@ const PostCard = ({
   const [originalAuthor, setOriginalAuthor] = useState(null);
   const [showComments, setShowComments] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
     loadPostAuthor();
@@ -107,7 +108,6 @@ const PostCard = ({
       )}
 
       <div className="p-6">
-        {/* Post Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center flex-1">
             <button
@@ -122,9 +122,11 @@ const PostCard = ({
             >
               <img
                 src={
-                  originalAuthor
+                  ((originalAuthor
                     ? originalAuthor.profile_image
-                    : postAuthor.profile_image
+                    : postAuthor.profile_image) === "" )?("https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"):(originalAuthor
+                    ? originalAuthor.profile_image
+                    : postAuthor.profile_image )
                 }
                 alt={originalAuthor ? originalAuthor.name : postAuthor.name}
                 className="h-12 w-12 rounded-full object-cover border-2 border-gray-100 hover:border-blue-300 transition-colors"
@@ -177,9 +179,47 @@ const PostCard = ({
               </div>
             </div>
           </div>
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
-            <MoreHorizontal className="h-5 w-5" />
-          </button>
+          <div className="relative">
+            {(originalAuthor
+              ? originalAuthor.user_principal
+              : postAuthor.user_principal
+            ).toString() === currentUser.user_principal.toString() && (
+              <>
+                <button
+                  onClick={() => setShowOptions((prev) => !prev)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
+                {showOptions && (
+                  <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                    <button
+                      onClick={() => {
+                        setShowOptions(false);
+                        // TODO: CREATE FUNCTION IN BACKEND AND IMPLEMENT IT HERE
+
+                        console.log("Edit post", post.post_id);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                    >
+                      Edit Post
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowOptions(false);
+                        // TODO: CREATE FUNCTION IN BACKEND AND IMPLEMENT IT HERE
+
+                        console.log("Delete post", post.post_id);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      Delete Post
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Post Content */}
@@ -195,7 +235,18 @@ const PostCard = ({
               <img
                 src={post.image[0]}
                 alt="Post content"
-                className="w-full h-auto max-h-96 object-cover"
+                className="w-full h-auto object-contain"
+                style={{ maxHeight: "96vh" }}
+                onLoad={(e) => {
+                  // If image is wider than tall, limit width to 100%
+                  // If image is taller than wide, limit height to a reasonable value
+                  const img = e.target;
+                  if (img.naturalWidth > img.naturalHeight) {
+                    img.style.maxHeight = "none";
+                  } else if (img.naturalHeight > img.naturalWidth * 2) {
+                    img.style.maxHeight = "96vh";
+                  }
+                }}
               />
             </div>
           )}
@@ -239,9 +290,9 @@ const PostCard = ({
             <span className="text-sm font-medium">Repost</span>
           </button>
 
-          <button className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200">
+          {/* <button className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200">
             <Share className="h-5 w-5" />
-          </button>
+          </button> */}
         </div>
 
         {/* Comments Section */}

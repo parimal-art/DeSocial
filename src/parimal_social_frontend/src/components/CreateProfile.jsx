@@ -126,7 +126,7 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
               <div className="w-full h-32 rounded-xl overflow-hidden bg-gray-100 border-2 border-gray-200 mb-3">
                 {formData.coverImage ? (
                   <img 
-                    src={formData.coverImage} 
+                    src={formData.coverImage || 'https://upload.wikimedia.org/wikipedia/commons/b/b9/No_Cover.jpg'} 
                     alt="Cover" 
                     className="w-full h-full object-cover"
                   />

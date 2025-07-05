@@ -66,7 +66,7 @@ const CommentBox = ({ actor, postId, comments, currentUser, onCommentAdded, onUs
                 className="flex-shrink-0"
               >
                 <img
-                  src={author?.profile_image || 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200'}
+                  src={author?.profile_image || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'}
                   alt={author?.name || 'User'}
                   className="h-8 w-8 rounded-full object-cover border border-gray-200 hover:border-blue-300 transition-colors"
                 />

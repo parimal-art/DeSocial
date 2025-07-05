@@ -92,7 +92,7 @@ const UserProfile = ({ actor, userId, currentUser, onUserProfileView }) => {
           {/* Cover Image */}
           <div className="h-64 bg-gradient-to-r from-blue-500 to-purple-600 relative">
             <img
-              src={user.cover_image}
+              src={user.cover_image || 'https://upload.wikimedia.org/wikipedia/commons/b/b9/No_Cover.jpg'}
               alt="Cover"
               className="w-full h-full object-cover"
             />
@@ -102,7 +102,7 @@ const UserProfile = ({ actor, userId, currentUser, onUserProfileView }) => {
           <div className="px-6 pb-6">
             <div className="flex items-end justify-between -mt-16">
               <img
-                src={user.profile_image}
+                src={user.profile_image  || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'}
                 alt={user.name}
                 className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg z-10"
               />

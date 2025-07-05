@@ -346,6 +346,42 @@ pub fn repost_post(post_id: u64) -> Result<Post, String> {
     Ok(repost)
 }
 
+#[update]
+pub fn delete_post(post_id: u64) -> Result<String, String> {
+    let principal = caller();
+    
+    POSTS.with(|posts| {
+        let mut posts = posts.borrow_mut();
+        
+        // Check if post exists
+        match posts.get(&post_id) {
+            Some(post) => {
+                // Check if caller is the author
+                if post.author != principal {
+                    return Err("Unauthorized: Only the author can delete this post".to_string());
+                }
+                
+                // Remove the post
+                posts.remove(&post_id);
+                
+                // Also remove any reposts of this post
+                let reposts_to_remove: Vec<u64> = posts
+                    .iter()
+                    .filter(|(_, p)| p.original_post_id == Some(post_id))
+                    .map(|(id, _)| *id)
+                    .collect();
+                
+                for repost_id in reposts_to_remove {
+                    posts.remove(&repost_id);
+                }
+                
+                Ok("Post deleted successfully".to_string())
+            },
+            None => Err("Post not found".to_string()),
+        }
+    })
+}
+
 // Follow System Functions
 #[update]
 pub fn follow_user(target_principal: Principal) -> Result<String, String> {

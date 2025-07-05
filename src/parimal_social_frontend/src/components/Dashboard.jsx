@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Home, 
-  PlusCircle, 
-  User, 
-  Search, 
-  Bell, 
-  Users, 
+import {
+  Bell,
+  Home,
   LogOut,
   Menu,
-  X
-} from 'lucide-react';
-import Feed from './Feed';
-import CreatePost from './CreatePost';
-import EditProfile from './EditProfile';
-import ExploreUsers from './ExploreUsers';
-import Notifications from './Notifications';
-import FollowersFollowing from './FollowersFollowing';
-import UserProfile from './UserProfile';
+  PlusCircle,
+  Search,
+  User,
+  Users,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import CreatePost from "./CreatePost";
+import EditProfile from "./EditProfile";
+import ExploreUsers from "./ExploreUsers";
+import Feed from "./Feed";
+import FollowersFollowing from "./FollowersFollowing";
+import Notifications from "./Notifications";
+import UserProfile from "./UserProfile";
 
 const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
-  const [currentView, setCurrentView] = useState('feed');
+  const [currentView, setCurrentView] = useState("feed");
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,9 +36,9 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
     try {
       const notifs = await actor.get_notifications();
       setNotifications(notifs);
-      setUnreadCount(notifs.filter(n => !n.read).length);
+      setUnreadCount(notifs.filter((n) => !n.read).length);
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      console.error("Error loading notifications:", error);
     }
   };
 
@@ -50,37 +50,87 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
 
   const handleUserProfileView = (userId) => {
     setSelectedUserId(userId);
-    setCurrentView('userProfile');
+    setCurrentView("userProfile");
     setSidebarOpen(false);
   };
 
   const sidebarItems = [
-    { id: 'feed', label: 'Home', icon: Home },
-    { id: 'createPost', label: 'Create Post', icon: PlusCircle },
-    { id: 'editProfile', label: 'Edit Profile', icon: User },
-    { id: 'explore', label: 'Explore Users', icon: Search },
-    { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
-    { id: 'following', label: 'Followers/Following', icon: Users },
+    { id: "feed", label: "Home", icon: Home },
+    { id: "createPost", label: "Create Post", icon: PlusCircle },
+    { id: "editProfile", label: "Edit Profile", icon: User },
+    { id: "explore", label: "Explore Users", icon: Search },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: Bell,
+      badge: unreadCount,
+    },
+    { id: "following", label: "Followers/Following", icon: Users },
   ];
 
   const renderContent = () => {
     switch (currentView) {
-      case 'feed':
-        return <Feed actor={actor} user={user} onUserProfileView={handleUserProfileView} />;
-      case 'createPost':
-        return <CreatePost actor={actor} onPostCreated={() => handleViewChange('feed')} />;
-      case 'editProfile':
-        return <EditProfile actor={actor} user={user} onUserUpdate={onUserUpdate} />;
-      case 'explore':
-        return <ExploreUsers actor={actor} currentUser={user} onUserProfileView={handleUserProfileView} />;
-      case 'notifications':
-        return <Notifications actor={actor} notifications={notifications} onNotificationUpdate={loadNotifications} onUserProfileView={handleUserProfileView} />;
-      case 'following':
-        return <FollowersFollowing actor={actor} user={user} onUserProfileView={handleUserProfileView} />;
-      case 'userProfile':
-        return <UserProfile actor={actor} userId={selectedUserId} currentUser={user} onUserProfileView={handleUserProfileView} />;
+      case "feed":
+        return (
+          <Feed
+            actor={actor}
+            user={user}
+            onUserProfileView={handleUserProfileView}
+          />
+        );
+      case "createPost":
+        return (
+          <CreatePost
+            actor={actor}
+            onPostCreated={() => handleViewChange("feed")}
+          />
+        );
+      case "editProfile":
+        return (
+          <EditProfile actor={actor} user={user} onUserUpdate={onUserUpdate} />
+        );
+      case "explore":
+        return (
+          <ExploreUsers
+            actor={actor}
+            currentUser={user}
+            onUserProfileView={handleUserProfileView}
+          />
+        );
+      case "notifications":
+        return (
+          <Notifications
+            actor={actor}
+            notifications={notifications}
+            onNotificationUpdate={loadNotifications}
+            onUserProfileView={handleUserProfileView}
+          />
+        );
+      case "following":
+        return (
+          <FollowersFollowing
+            actor={actor}
+            user={user}
+            onUserProfileView={handleUserProfileView}
+          />
+        );
+      case "userProfile":
+        return (
+          <UserProfile
+            actor={actor}
+            userId={selectedUserId}
+            currentUser={user}
+            onUserProfileView={handleUserProfileView}
+          />
+        );
       default:
-        return <Feed actor={actor} user={user} onUserProfileView={handleUserProfileView} />;
+        return (
+          <Feed
+            actor={actor}
+            user={user}
+            onUserProfileView={handleUserProfileView}
+          />
+        );
     }
   };
 
@@ -93,13 +143,21 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 rounded-lg hover:bg-gray-100"
           >
-            {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {sidebarOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
           <h1 className="ml-3 text-xl font-bold text-gray-900">DeSocial</h1>
         </div>
         <div className="flex items-center space-x-2">
           <img
-            src={user.profile_image}
+            src={
+              user.profile_image === ""
+                ? "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+                : user.profile_image
+            }
             alt={user.name}
             className="h-8 w-8 rounded-full object-cover"
           />
@@ -108,8 +166,12 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
 
       <div className="flex h-screen overflow-hidden">
         {/* Sidebar */}
-          <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:shadow-none border-r transition-transform duration-300 ease-in-out overflow-y-hidden flex flex-col h-screen`}>
-            {/* Desktop Header */}
+        <div
+          className={`${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0 lg:static fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:shadow-none border-r transition-transform duration-300 ease-in-out overflow-y-hidden flex flex-col h-screen`}
+        >
+          {/* Desktop Header */}
           <div className="hidden lg:block p-6 border-b">
             <div className="flex items-center">
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-xl">
@@ -123,13 +185,19 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
           <div className="p-6">
             <div className="flex items-center">
               <img
-                src={user.profile_image}
+                src={
+                  user.profile_image === ""
+                    ? "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+                    : user.profile_image
+                }
                 alt={user.name}
                 className="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
               />
               <div className="ml-3">
                 <h3 className="font-semibold text-gray-900">{user.name}</h3>
-                <p className="text-sm text-gray-500">@{user.user_principal.toString().slice(-8)}</p>
+                <p className="text-sm text-gray-500">
+                  @{user.user_principal.toString().slice(-8)}
+                </p>
               </div>
             </div>
             <div className="mt-4 flex space-x-4 text-sm text-gray-500">
@@ -143,15 +211,15 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
             {sidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
-              
+
               return (
                 <button
                   key={item.id}
                   onClick={() => handleViewChange(item.id)}
                   className={`w-full flex items-center px-3 py-3 rounded-xl mb-1 transition-all duration-200 ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      ? "bg-blue-50 text-blue-700 font-medium"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
                   <Icon className="h-5 w-5 mr-3" />
@@ -180,9 +248,7 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
 
         {/* Main Content */}
         <div className="flex-1 lg:ml-0 overflow-y-auto">
-          <div className="max-w-4xl mx-auto">
-            {renderContent()}
-          </div>
+          <div className="max-w-4xl mx-auto">{renderContent()}</div>
         </div>
       </div>
 
