@@ -13,7 +13,7 @@ const Login = ({ onLogin }) => {
                   <Users className="h-8 w-8 text-white" />
                 </div>
                 <h1 className="ml-3 text-3xl font-bold text-gray-900">
-                  Parimal Social
+                  DeSocial
                 </h1>
               </div>
 
@@ -61,7 +61,7 @@ const Login = ({ onLogin }) => {
             <div className="bg-white rounded-3xl shadow-2xl p-8 backdrop-blur-lg border border-white/20">
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Welcome to Parimal Social
+                  Welcome to DeSocial
                 </h3>
                 <p className="text-gray-600">
                   Choose your preferred login method
