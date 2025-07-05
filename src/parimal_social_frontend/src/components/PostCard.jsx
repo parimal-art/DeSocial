@@ -16,61 +16,96 @@ const PostCard = ({
   const [showComments, setShowComments] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(post.content);
 
   useEffect(() => {
     loadPostAuthor();
-  }, [post.post_id]); // Only re-run when post ID changes, not on every currentUser change
+  }, [post.post_id]);
 
   const loadPostAuthor = async () => {
     try {
       const author = await actor.get_user(post.author);
-      if (author[0]) {
-        setPostAuthor(author[0]);
-      }
+      if (author[0]) setPostAuthor(author[0]);
 
-      // If this is a repost, load the original author
       if (post.original_post_id && post.reposted_by) {
-        const originalPost = await actor.get_all_posts();
-        const original = originalPost.find(
+        const originalPosts = await actor.get_all_posts();
+        const original = originalPosts.find(
           (p) => p.post_id === post.original_post_id[0]
         );
         if (original) {
           const origAuthor = await actor.get_user(original.author);
-          if (origAuthor[0]) {
-            setOriginalAuthor(origAuthor[0]);
-          }
+          if (origAuthor[0]) setOriginalAuthor(origAuthor[0]);
         }
       }
-    } catch (error) {
-      console.error("Error loading post author:", error);
+    } catch (err) {
+      console.error("Failed to load author:", err);
     }
   };
 
   const handleRepost = async () => {
     if (processing) return;
-
     setProcessing(true);
     try {
       const result = await actor.repost_post(post.post_id);
-      if (result.Ok) {
-        if (onPostUpdate) onPostUpdate();
-      } else {
-        alert(result.Err);
-      }
-    } catch (error) {
-      console.error("Error reposting:", error);
+      if (result.Ok) onPostUpdate?.();
+      else alert(result.Err);
+    } catch (err) {
+      console.error("Repost failed:", err);
     } finally {
       setProcessing(false);
     }
   };
 
-  const formatDate = (timestamp) => {
-    const date = new Date(Number(timestamp) / 1000000);
-    return (
-      date.toLocaleDateString() +
-      " " +
-      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    );
+  const handleEdit = () => {
+    setEditedContent(post.content);
+    setIsEditing(true);
+    setShowOptions(false);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const result = await actor.edit_post(
+        post.post_id,
+        editedContent,
+        post.image?.[0] ? [post.image[0]] : [],
+        post.video?.[0] ? [post.video[0]] : []
+      );
+      if (result.Ok) {
+        setIsEditing(false);
+        onPostUpdate?.();
+      } else {
+        alert(result.Err);
+      }
+    } catch (err) {
+      console.error("Edit failed:", err);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent(post.content);
+  };
+
+  const handleDelete = async () => {
+    setShowOptions(false);
+    if (!confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+      const result = await actor.delete_post(post.post_id);
+      if (result.Ok) onPostUpdate?.();
+      else alert(result.Err);
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
+
+  const formatDate = (ts) => {
+    const date = new Date(Number(ts) / 1000000);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
   };
 
   if (!postAuthor) {
@@ -87,9 +122,14 @@ const PostCard = ({
     );
   }
 
+  const isOwner =
+    (originalAuthor?.user_principal ?? postAuthor.user_principal).toString() ===
+    currentUser.user_principal.toString();
+
+  const displayAuthor = originalAuthor ?? postAuthor;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
-      {/* Repost indicator */}
       {post.reposted_by && originalAuthor && (
         <div className="px-6 pt-4 pb-2 border-b border-gray-50">
           <div className="flex items-center text-sm text-gray-500">
@@ -111,67 +151,42 @@ const PostCard = ({
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center flex-1">
             <button
-              onClick={() =>
-                onUserProfileView(
-                  originalAuthor
-                    ? originalAuthor.principal
-                    : postAuthor.principal
-                )
-              }
+              onClick={() => onUserProfileView(displayAuthor.principal)}
               className="flex-shrink-0"
             >
               <img
                 src={
-                  ((originalAuthor
-                    ? originalAuthor.profile_image
-                    : postAuthor.profile_image) === "" )?("https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"):(originalAuthor
-                    ? originalAuthor.profile_image
-                    : postAuthor.profile_image )
+                  displayAuthor.profile_image === ""
+                    ? "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+                    : displayAuthor.profile_image
                 }
-                alt={originalAuthor ? originalAuthor.name : postAuthor.name}
-                className="h-12 w-12 rounded-full object-cover border-2 border-gray-100 hover:border-blue-300 transition-colors"
+                alt={displayAuthor.name}
+                className="h-12 w-12 rounded-full object-cover border-2 border-gray-100 hover:border-blue-300"
               />
             </button>
             <div className="ml-3 flex-1">
               <div className="flex items-center">
                 <button
                   onClick={() =>
-                    onUserProfileView(
-                      originalAuthor
-                        ? originalAuthor.user_principal
-                        : postAuthor.user_principal
-                    )
+                    onUserProfileView(displayAuthor.user_principal)
                   }
-                  className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                  className="font-semibold text-gray-900 hover:text-blue-600"
                 >
-                  {originalAuthor ? originalAuthor.name : postAuthor.name}
+                  {displayAuthor.name}
                 </button>
                 <span className="ml-2 text-sm text-gray-500">
-                  @
-                  {(originalAuthor
-                    ? originalAuthor.user_principal
-                    : postAuthor.user_principal
-                  )
-                    .toString()
-                    .slice(-8)}
+                  @{displayAuthor.user_principal.toString().slice(-8)}
                 </span>
               </div>
               <div className="flex items-center mt-1">
                 <time className="text-sm text-gray-500">
                   {formatDate(post.created_at)}
                 </time>
-                {(originalAuthor
-                  ? originalAuthor.user_principal
-                  : postAuthor.user_principal
-                ).toString() !== currentUser.user_principal.toString() && (
+                {!isOwner && (
                   <div className="ml-3">
                     <FollowButton
                       actor={actor}
-                      targetUserId={
-                        originalAuthor
-                          ? originalAuthor.user_principal
-                          : postAuthor.user_principal
-                      }
+                      targetUserId={displayAuthor.user_principal}
                       size="sm"
                     />
                   </div>
@@ -179,79 +194,77 @@ const PostCard = ({
               </div>
             </div>
           </div>
-          <div className="relative">
-            {(originalAuthor
-              ? originalAuthor.user_principal
-              : postAuthor.user_principal
-            ).toString() === currentUser.user_principal.toString() && (
-              <>
-                <button
-                  onClick={() => setShowOptions((prev) => !prev)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
-                >
-                  <MoreHorizontal className="h-5 w-5" />
-                </button>
-                {showOptions && (
-                  <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                    <button
-                      onClick={() => {
-                        setShowOptions(false);
-                        // TODO: CREATE FUNCTION IN BACKEND AND IMPLEMENT IT HERE
-
-                        console.log("Edit post", post.post_id);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      Edit Post
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowOptions(false);
-                        // TODO: CREATE FUNCTION IN BACKEND AND IMPLEMENT IT HERE
-
-                        console.log("Delete post", post.post_id);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      Delete Post
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          {isOwner && (
+            <div className="relative">
+              <button
+                onClick={() => setShowOptions((prev) => !prev)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full"
+              >
+                <MoreHorizontal className="h-5 w-5" />
+              </button>
+              {showOptions && (
+                <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                  <button
+                    onClick={handleEdit}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  >
+                    Edit Post
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Delete Post
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Post Content */}
         <div className="mb-4">
-          {post.content && (
-            <p className="text-gray-900 text-base leading-relaxed mb-4">
-              {post.content}
-            </p>
+          {isEditing ? (
+            <>
+              <textarea
+                className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-800"
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+              />
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={handleSaveEdit}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="bg-gray-200 hover:bg-gray-300 text-sm px-3 py-1 rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            post.content && (
+              <p className="text-gray-900 text-base leading-relaxed mb-4">
+                {post.content}
+              </p>
+            )
           )}
 
-          {post.image && post.image[0] && (
+          {post.image?.[0] && (
             <div className="rounded-xl overflow-hidden mb-4">
               <img
                 src={post.image[0]}
                 alt="Post content"
                 className="w-full h-auto object-contain"
                 style={{ maxHeight: "96vh" }}
-                onLoad={(e) => {
-                  // If image is wider than tall, limit width to 100%
-                  // If image is taller than wide, limit height to a reasonable value
-                  const img = e.target;
-                  if (img.naturalWidth > img.naturalHeight) {
-                    img.style.maxHeight = "none";
-                  } else if (img.naturalHeight > img.naturalWidth * 2) {
-                    img.style.maxHeight = "96vh";
-                  }
-                }}
               />
             </div>
           )}
-
-          {post.video && post.video[0] && (
+          {post.video?.[0] && (
             <div className="rounded-xl overflow-hidden mb-4">
               <video
                 src={post.video[0]}
@@ -270,15 +283,13 @@ const PostCard = ({
             currentUser={currentUser}
             onPostUpdate={onPostUpdate}
           />
-
           <button
-            onClick={() => setShowComments(!showComments)}
-            className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
+            onClick={() => setShowComments((v) => !v)}
+            className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50"
           >
             <MessageCircle className="h-5 w-5" />
             <span className="text-sm font-medium">{post.comments.length}</span>
           </button>
-
           <button
             onClick={handleRepost}
             disabled={processing}
@@ -289,13 +300,8 @@ const PostCard = ({
             <Repeat2 className="h-5 w-5" />
             <span className="text-sm font-medium">Repost</span>
           </button>
-
-          {/* <button className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200">
-            <Share className="h-5 w-5" />
-          </button> */}
         </div>
 
-        {/* Comments Section */}
         {showComments && (
           <div className="mt-6 pt-6 border-t border-gray-100">
             <CommentBox
@@ -313,15 +319,11 @@ const PostCard = ({
   );
 };
 
-// Custom comparison function to prevent unnecessary re-renders
-const areEqual = (prevProps, nextProps) => {
-  return (
-    prevProps.post.post_id === nextProps.post.post_id &&
-    prevProps.post.likes.length === nextProps.post.likes.length &&
-    prevProps.post.comments.length === nextProps.post.comments.length &&
-    prevProps.currentUser.user_principal.toString() ===
-      nextProps.currentUser.user_principal.toString()
-  );
-};
+const areEqual = (prevProps, nextProps) =>
+  prevProps.post.post_id === nextProps.post.post_id &&
+  prevProps.post.likes.length === nextProps.post.likes.length &&
+  prevProps.post.comments.length === nextProps.post.comments.length &&
+  prevProps.currentUser.user_principal.toString() ===
+    nextProps.currentUser.user_principal.toString();
 
 export default memo(PostCard, areEqual);

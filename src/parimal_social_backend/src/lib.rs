@@ -382,6 +382,35 @@ pub fn delete_post(post_id: u64) -> Result<String, String> {
     })
 }
 
+
+// Edit Post Functions
+#[update]
+pub fn edit_post(post_id: u64, new_content: String, new_image: Option<String>, new_video: Option<String>) -> Result<Post, String> {
+    let principal = caller();
+
+    if new_content.trim().is_empty() && new_image.is_none() && new_video.is_none() {
+        return Err("Post must have content, image, or video".to_string());
+    }
+
+    POSTS.with(|posts| {
+        let mut posts = posts.borrow_mut();
+        match posts.get_mut(&post_id) {
+            Some(post) => {
+                if post.author != principal {
+                    return Err("Unauthorized: Only the author can edit this post".to_string());
+                }
+
+                post.content = new_content;
+                post.image = new_image;
+                post.video = new_video;
+                Ok(post.clone())
+            }
+            None => Err("Post not found".to_string()),
+        }
+    })
+}
+
+
 // Follow System Functions
 #[update]
 pub fn follow_user(target_principal: Principal) -> Result<String, String> {

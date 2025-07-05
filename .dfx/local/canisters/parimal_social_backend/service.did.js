@@ -53,6 +53,16 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : Post, 'Err' : IDL.Text })],
         [],
       ),
+    'delete_post' : IDL.Func(
+        [IDL.Nat64],
+        [IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text })],
+        [],
+      ),
+    'edit_post' : IDL.Func(
+        [IDL.Nat64, IDL.Text, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+        [IDL.Variant({ 'Ok' : Post, 'Err' : IDL.Text })],
+        [],
+      ),
     'follow_user' : IDL.Func(
         [IDL.Principal],
         [IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text })],

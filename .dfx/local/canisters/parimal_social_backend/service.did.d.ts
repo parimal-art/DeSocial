@@ -54,6 +54,12 @@ export interface _SERVICE {
     { 'Ok' : Post } |
       { 'Err' : string }
   >,
+  'delete_post' : ActorMethod<[bigint], { 'Ok' : string } | { 'Err' : string }>,
+  'edit_post' : ActorMethod<
+    [bigint, string, [] | [string], [] | [string]],
+    { 'Ok' : Post } |
+      { 'Err' : string }
+  >,
   'follow_user' : ActorMethod<
     [Principal],
     { 'Ok' : string } |
