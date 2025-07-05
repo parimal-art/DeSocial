@@ -104,7 +104,7 @@ const UserProfile = ({ actor, userId, currentUser, onUserProfileView }) => {
               <img
                 src={user.profile_image}
                 alt={user.name}
-                className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg"
+                className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg z-10"
               />
               
               {!isOwnProfile && (
