@@ -70,7 +70,7 @@ const FollowersFollowing = ({ actor, user, onUserProfileView }) => {
           className="flex-shrink-0"
         >
           <img
-            src={userData.profile_image || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'}
+            src={userData.profile_image || "/no-profile.jpg"}
             alt={userData.name}
             className="h-16 w-16 rounded-full object-cover border-2 border-gray-200 hover:border-blue-300 transition-colors"
           />

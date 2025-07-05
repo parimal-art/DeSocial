@@ -154,9 +154,8 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
         <div className="flex items-center space-x-2">
           <img
             src={
-              user.profile_image === ""
-                ? "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-                : user.profile_image
+              user.profile_image ||
+              "/no-profile.jpg"
             }
             alt={user.name}
             className="h-8 w-8 rounded-full object-cover"
@@ -189,9 +188,8 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
             >
               <img
                 src={
-                  user.profile_image === ""
-                    ? "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-                    : user.profile_image
+                  user.profile_image ||
+                  "/no-profile.jpg"
                 }
                 alt={user.name}
                 className="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
