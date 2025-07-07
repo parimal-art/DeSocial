@@ -11,20 +11,20 @@
       "type": "custom",
       "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
     },
-    "parimal_social_backend": {
-      "candid": "src/parimal_social_backend/parimal_social_backend.did",
-      "package": "parimal_social_backend",
+    "social_T7_backend": {
+      "candid": "src/social_T7_backend/social_T7_backend.did",
+      "package": "social_T7_backend",
       "type": "rust"
     },
-    "parimal_social_frontend": {
+    "social_T7_frontend": {
       "dependencies": [
-        "parimal_social_backend"
+        "social_T7_backend"
       ],
       "source": [
-        "src/parimal_social_frontend/dist"
+        "src/social_T7_frontend/dist"
       ],
       "type": "assets",
-      "workspace": "parimal_social_frontend"
+      "workspace": "social_T7_frontend"
     }
   },
   "defaults": {

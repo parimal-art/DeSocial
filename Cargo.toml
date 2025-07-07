@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "src/parimal_social_backend"
+    "src/social_T7_backend"
 ]
 resolver = "2"
