@@ -88,7 +88,7 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
 
             {/* Profile */}
             <div className="absolute left-1/2 transform -translate-x-1/2 -bottom-12">
-              <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white bg-gray-100 shadow-md">
+              <div className="relative w-24 h-24 rounded-full  border-4 border-white bg-gray-100 shadow-md">
                 {formData.profileImage ? (
                   <img src={formData.profileImage} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
@@ -101,7 +101,7 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
                     onChange={(e) => handleImageUpload(e, 'profileImage')}
                     className="hidden"
                   />
-                  <Pencil className="w-4 h-4 text-white bg-black/50 p-1 rounded-full" />
+                  <Pencil className="w-5 h-5 text-white bg-black/50 p-1 rounded-full" />
                 </label>
               </div>
             </div>
