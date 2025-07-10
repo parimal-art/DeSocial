@@ -90,7 +90,7 @@ const CreateProfile = ({ actor, principal, onProfileCreated }) => {
             <div className="absolute left-1/2 transform -translate-x-1/2 -bottom-12">
               <div className="relative w-24 h-24 rounded-full  border-4 border-white bg-gray-100 shadow-md">
                 {formData.profileImage ? (
-                  <img src={formData.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  <img src={formData.profileImage} alt="Profile" className="w-full h-full object-cover rounded-full" />
                 ) : (
                   <Camera className="w-8 h-8 text-gray-400 m-auto mt-8" />
                 )}
