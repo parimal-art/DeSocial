@@ -23,7 +23,7 @@ const Login = ({ onLogin }) => {
                   {" "}
                   Decentralized{" "}
                 </span>
-                Web
+                Social Media
               </h2>
 
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
@@ -63,9 +63,9 @@ const Login = ({ onLogin }) => {
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   Welcome to DeSocial
                 </h3>
-                <p className="text-gray-600">
+                {/* <p className="text-gray-600">
                   Choose your preferred login method
-                </p>
+                </p> */}
               </div>
 
               <div className="space-y-4">
