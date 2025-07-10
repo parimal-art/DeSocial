@@ -151,7 +151,7 @@ const PostCard = ({
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center flex-1">
             <button
-              onClick={() => onUserProfileView(displayAuthor.principal)}
+              onClick={() => onUserProfileView(displayAuthor.user_principal)}
               className="flex-shrink-0"
             >
               <img
