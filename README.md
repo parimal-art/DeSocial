@@ -20,7 +20,7 @@ This README is written from a developer’s perspective to help you understand, 
 
 Check out the demo to see DeSocial in action:
 
-[DeSocial Project Demo](https://youtu.be/ESqycgZwEE0)
+[DeSocial Project Demo](https://youtu.be/briaX8L_Uz0?si=XkmSySfYJddWEdZa)
 
 ---
 ## 🚀 Getting Started (Local Dev)
