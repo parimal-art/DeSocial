@@ -168,10 +168,13 @@ If you're contributing:
 ## 💡 Status
 
 - ✅ Login + profile management
-- ✅ Dummy data feed
-- ✅ Follow system (WIP debugging)
-- 🔲 Notifications, messaging (coming soon)
-- 🔲 Mainnet deploy (next milestone)
+- ✅ Edit Profile
+- ✅ Create, Edit and Delete post
+- ✅ Like Comment and Repost
+- ✅ Feed
+- ✅ Follow Unfollow system
+- ✅ View another's profile
+- ✅ Notifications
 
 ---
 
