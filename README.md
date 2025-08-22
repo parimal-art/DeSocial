@@ -1,99 +1,129 @@
-# DeSocial 🧑‍💻
- updated readme
-`DeSocial` is a decentralized social media platform powered by the **Internet Computer Protocol (ICP)**. This repo sets up a full-stack Dapp using **Rust** (for backend canisters) and **React** (for the frontend).
+# 🌐 DeSocial 🧑‍💻  
+*A Decentralized Social Media Platform on ICP*  
 
-This README is written from a developer’s perspective to help you understand, run, and extend the codebase as efficiently as possible.
+DeSocial is a decentralized social media platform built on the **Internet Computer Protocol (ICP)**. Unlike traditional social media platforms, DeSocial gives users **full ownership** of their identity, data, and content. It is censorship-resistant, scalable, and provides a real-time social experience.  
+
+This repository contains the full-stack dApp setup using:  
+- **Rust** canisters (backend)  
+- **React.js** (frontend)  
+- **Candid** (IDL interface)  
+
+Our goal: **To build the future of open networking** 🚀  
+
+---
+
+## ✨ Features (100% Detailed)
+
+✅ **Self-sovereign Identity** – Users fully own and manage their profiles.  
+✅ **User-owned Content** – Posts are stored on ICP canisters, ensuring ownership and immutability.  
+✅ **Create / Edit / Delete Posts** – Full post lifecycle supported.  
+✅ **Social Interactions** – Like, comment, and repost any post.  
+✅ **Follow/Unfollow System** – Build decentralized connections with no central authority.  
+✅ **Real-time Messaging** – Peer-to-peer chat powered by ICP.  
+✅ **Notifications** – Instant updates for likes, comments, reposts, and follows.  
+✅ **Profile Management** – Create, edit, and view user profiles.  
+✅ **View Other Profiles** – Check posts, followers, and following of any user.  
+✅ **Sharded Canisters** – Ensures scalability and reliability under load.  
+✅ **On-chain Data Ownership** – All data is stored securely on ICP with no single point of failure.  
 
 ---
 
 ## 🧱 Tech Stack
 
-- **Frontend**: React.js
-- **Backend (Canister)**: Rust + `ic-cdk`
+- **Frontend**: React.js (for UI + real-time updates)
+- **Backend**: Rust canisters using `ic-cdk`
 - **IDL/Interface**: Candid
 - **Dev Tooling**: `dfx`, `npm`, `cargo`
-- **Network**: Runs locally on replica or can be deployed to mainnet
+- **Deployment**: Local replica or ICP mainnet
+
+---
+
+## 🏗️ Project Flow
+
+```mermaid
+flowchart TD
+    A[Register/Login] --> B[Create Profile]
+    B --> C[Create/Edit/Delete Post]
+    C --> D[Feed Updates]
+    D --> E[Like/Comment/Repost]
+    D --> F[Follow/Unfollow]
+    D --> G[Real-time Messaging]
+
+    %% On-demand access from anywhere
+    M((Global Menu))
+    A -.-> M
+    B -.-> M
+    C -.-> M
+    D -.-> M
+    E -.-> M
+    F -.-> M
+    G -.-> M
+    M --> H[View Profile]
+    M --> I[Notifications]
+
+    %% Notifications are triggered by these events
+    E --> I
+    F --> I
+    G --> I
+
+```
 
 ---
 
 ## 🎥 Project Demo
 
-Check out the demo to see DeSocial in action:
-
-[DeSocial Project Demo](https://youtu.be/briaX8L_Uz0?si=XkmSySfYJddWEdZa)
+🔗 [Watch Demo Video](https://youtu.be/0Qh6rBteXz8?feature=shared)  
 
 ---
-## 🚀 Getting Started (Local Dev)
 
-### Step 1: Install DFX SDK
+## 🚀 Getting Started (Local Development)
 
-If not installed:
+### 1️⃣ Install DFX SDK
 
 ```bash
 sh -ci "$(curl -fsSL https://smartcontracts.org/install.sh)"
-```
-
-Verify:
-
-```bash
 dfx --version
 ```
 
----
-
-### Step 2: Start Local Replica
+### 2️⃣ Start Local Replica
 
 ```bash
 dfx start --background
 ```
+This boots the Internet Computer locally.  
 
-This boots the Internet Computer locally.
-
----
-
-### Step 3: Deploy Canisters Locally
+### 3️⃣ Deploy Canisters
 
 ```bash
 dfx deploy
 ```
+- Compiles Rust backend canisters
+- Generates Candid interface files
+- Deploys frontend + backend to local replica
 
-- Compiles backend canister (`Rust`)
-- Generates candid interface files
-- Deploys frontend to the local replica
-
-App will be available at:
-
+App will be available at:  
 ```
 http://localhost:4943?canisterId=<asset_canister_id>
 ```
 
----
+### 4️⃣ Regenerate Candid Bindings (Optional)
 
-### Step 4: Regenerate Candid (Optional)
-
-If you’ve made changes in your backend Rust canister:
-
+If backend Rust canister changes:  
 ```bash
 npm run generate
 ```
+This regenerates frontend actor bindings from Candid files.  
 
-> This regenerates frontend actor bindings using the latest Candid files.
-
----
-
-### Step 5: Start Frontend (React Dev Server)
+### 5️⃣ Start Frontend (React Dev Server)
 
 ```bash
 npm start
 ```
-
-Runs at:
-
+Frontend runs at:  
 ```
 http://localhost:8080
 ```
-
-It proxies API requests to port `4943` where the replica is running.
+(API requests are proxied to port `4943`).  
 
 ---
 
@@ -111,24 +141,27 @@ de_social/
 
 ---
 
-## 🌐 Frontend Env (Production Notes)
+## 🌐 Production Notes
 
-In production (mainnet deploy), don’t allow root key fetching. Choose any of:
+When deploying to **ICP mainnet**, disable root key fetching. Options:  
 
-1. Set `DFX_NETWORK=ic`
-2. Use `env_override` in `dfx.json`:
+1. Set environment variable:  
+   ```bash
+   export DFX_NETWORK=ic
+   ```  
 
-```json
-"canisters": {
-  "de_social_backend": {
-    "declarations": {
-      "env_override": "ic"
-    }
-  }
-}
-```
+2. Use `env_override` in `dfx.json`:  
+   ```json
+   "canisters": {
+     "de_social_backend": {
+       "declarations": {
+         "env_override": "ic"
+       }
+     }
+   }
+   ```
 
-3. Or write your own `createActor()` method with hardcoded host/network.
+3. Write a custom `createActor()` function with hardcoded host/network.  
 
 ---
 
@@ -136,9 +169,9 @@ In production (mainnet deploy), don’t allow root key fetching. Choose any of:
 
 ```bash
 dfx start --background     # Start local replica
-dfx deploy                 # Deploy to local replica
+dfx deploy                 # Deploy canisters
 npm start                  # Start frontend dev server
-npm run generate           # Generate frontend bindings from backend
+npm run generate           # Generate bindings from Candid
 dfx stop                   # Stop local replica
 ```
 
@@ -146,40 +179,54 @@ dfx stop                   # Stop local replica
 
 ## 📚 Developer References
 
-- [ICP Quick Start](https://internetcomputer.org/docs/current/developer-docs/setup/deploy-locally)
-- [Rust Canister Guide](https://internetcomputer.org/docs/current/developer-docs/backend/rust/)
-- [Candid Syntax](https://internetcomputer.org/docs/current/developer-docs/backend/candid/)
-- [ic-cdk (Rust SDK)](https://docs.rs/ic-cdk)
-- [ic-cdk-macros](https://docs.rs/ic-cdk-macros)
+- [ICP Quick Start](https://internetcomputer.org/docs/current/developer-docs/setup/deploy-locally)  
+- [Rust Canister Guide](https://internetcomputer.org/docs/current/developer-docs/backend/rust/)  
+- [Candid Syntax](https://internetcomputer.org/docs/current/developer-docs/backend/candid/)  
+- [ic-cdk (Rust SDK)](https://docs.rs/ic-cdk)  
+- [ic-cdk-macros](https://docs.rs/ic-cdk-macros)  
 
 ---
 
 ## 🤝 Contributions
 
-If you're contributing:
+We welcome contributions!  
 
-1. Fork the repo
-2. Create a new branch
-3. Make and test changes locally
-4. Open a pull request
-
----
-
-## 💡 Status
-
-- ✅ Login + profile management
-- ✅ Edit Profile
-- ✅ Create, Edit and Delete post
-- ✅ Like Comment and Repost
-- ✅ Feed
-- ✅ Follow Unfollow system
-- ✅ View another's profile
-- ✅ Notifications
+1. Fork the repo  
+2. Create a new feature branch  
+3. Make and test changes locally  
+4. Open a Pull Request 🚀  
 
 ---
 
-## 🙌 Author's Note
+## 📌 Current Status
 
-This project is in active development. If you're exploring decentralized apps or ICP canisters, feel free to fork, extend, or open issues.
+- ✅ Login + Profile Management  
+- ✅ Edit Profile  
+- ✅ Create / Edit / Delete Posts  
+- ✅ Like / Comment / Repost  
+- ✅ Feed System  
+- ✅ Follow / Unfollow  
+- ✅ View Other Profiles  
+- ✅ Notifications  
+- ✅ Real-time Messaging  
+- ✅ Sharded Canisters for scalability  
 
-Happy hacking! 🚀
+---
+
+## 🔮 Future Enhancements
+
+- 🌟 Tokenized rewards for creators (Web3 monetization)  
+- 🌟 Group chats & communities  
+- 🌟 End-to-end encryption for private messaging  
+- 🌟 Mobile app integration  
+- 🌟 Advanced analytics for content creators  
+
+---
+
+## 🙌 Author’s Note
+
+DeSocial is in **active development**. Our mission is to create a **truly decentralized, censorship-free, and user-first social media platform**.  
+
+If you are exploring decentralized apps, ICP, or blockchain-powered networking, feel free to fork, extend, or raise issues.  
+
+Together, let’s build the **future of social media** 🌍🚀
