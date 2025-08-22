@@ -1,7 +1,7 @@
 export const idlFactory = ({ IDL }) => {
   const MetadataMap = IDL.Rec();
   const MetadataMapV2 = IDL.Rec();
-  const OpenIdConfig = IDL.Record({ 'client_id' : IDL.Text });
+  const GoogleOpenIdConfig = IDL.Record({ 'client_id' : IDL.Text });
   const ArchiveConfig = IDL.Record({
     'polling_interval_ns' : IDL.Nat64,
     'entries_buffer_limit' : IDL.Nat64,
@@ -15,6 +15,16 @@ export const idlFactory = ({ IDL }) => {
       'hash_mode' : IDL.Opt(IDL.Bool),
       'api_host' : IDL.Opt(IDL.Text),
     }),
+  });
+  const OpenIdConfig = IDL.Record({
+    'auth_uri' : IDL.Text,
+    'jwks_uri' : IDL.Text,
+    'logo' : IDL.Text,
+    'name' : IDL.Text,
+    'fedcm_uri' : IDL.Opt(IDL.Text),
+    'issuer' : IDL.Text,
+    'auth_scope' : IDL.Vec(IDL.Text),
+    'client_id' : IDL.Text,
   });
   const CaptchaConfig = IDL.Record({
     'max_unsolved_captchas' : IDL.Nat64,
@@ -37,7 +47,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const InternetIdentityInit = IDL.Record({
     'fetch_root_key' : IDL.Opt(IDL.Bool),
-    'openid_google' : IDL.Opt(IDL.Opt(OpenIdConfig)),
+    'openid_google' : IDL.Opt(IDL.Opt(GoogleOpenIdConfig)),
     'is_production' : IDL.Opt(IDL.Bool),
     'enable_dapps_explorer' : IDL.Opt(IDL.Bool),
     'assigned_user_number_range' : IDL.Opt(IDL.Tuple(IDL.Nat64, IDL.Nat64)),
@@ -45,7 +55,10 @@ export const idlFactory = ({ IDL }) => {
     'archive_config' : IDL.Opt(ArchiveConfig),
     'canister_creation_cycles_cost' : IDL.Opt(IDL.Nat64),
     'analytics_config' : IDL.Opt(IDL.Opt(AnalyticsConfig)),
+    'feature_flag_enable_generic_open_id_fe' : IDL.Opt(IDL.Bool),
     'related_origins' : IDL.Opt(IDL.Vec(IDL.Text)),
+    'feature_flag_continue_from_another_device' : IDL.Opt(IDL.Bool),
+    'openid_configs' : IDL.Opt(IDL.Vec(OpenIdConfig)),
     'captcha_config' : IDL.Opt(CaptchaConfig),
     'dummy_auth' : IDL.Opt(IDL.Opt(DummyAuthConfig)),
     'register_rate_limit' : IDL.Opt(RateLimitConfig),
@@ -142,7 +155,9 @@ export const idlFactory = ({ IDL }) => {
   });
   const AuthnMethodAddError = IDL.Variant({ 'InvalidMetadata' : IDL.Text });
   const AuthnMethodConfirmationError = IDL.Variant({
+    'InternalCanisterError' : IDL.Text,
     'RegistrationModeOff' : IDL.Null,
+    'Unauthorized' : IDL.Principal,
     'NoAuthnMethodToConfirm' : IDL.Null,
     'WrongCode' : IDL.Record({ 'retries_left' : IDL.Nat8 }),
   });
@@ -159,6 +174,19 @@ export const idlFactory = ({ IDL }) => {
     'RegistrationAlreadyInProgress' : IDL.Null,
     'InvalidMetadata' : IDL.Text,
   });
+  const RegistrationId = IDL.Text;
+  const AuthnMethodRegistrationModeEnterError = IDL.Variant({
+    'InvalidRegistrationId' : IDL.Text,
+    'InternalCanisterError' : IDL.Text,
+    'AlreadyInProgress' : IDL.Null,
+    'Unauthorized' : IDL.Principal,
+  });
+  const AuthnMethodRegistrationModeExitError = IDL.Variant({
+    'InternalCanisterError' : IDL.Text,
+    'RegistrationModeOff' : IDL.Null,
+    'Unauthorized' : IDL.Principal,
+    'InvalidMetadata' : IDL.Text,
+  });
   const AuthnMethodReplaceError = IDL.Variant({
     'AuthnMethodNotFound' : IDL.Null,
     'InvalidMetadata' : IDL.Text,
@@ -166,6 +194,7 @@ export const idlFactory = ({ IDL }) => {
   const AuthnMethodSecuritySettingsReplaceError = IDL.Variant({
     'AuthnMethodNotFound' : IDL.Null,
   });
+  const AuthnMethodSessionInfo = IDL.Record({ 'name' : IDL.Opt(IDL.Text) });
   const CheckCaptchaArg = IDL.Record({ 'solution' : IDL.Text });
   const RegistrationFlowNextStep = IDL.Variant({
     'CheckCaptcha' : IDL.Record({ 'captcha_png_base64' : IDL.Text }),
@@ -261,6 +290,7 @@ export const idlFactory = ({ IDL }) => {
   const DeviceRegistrationInfo = IDL.Record({
     'tentative_device' : IDL.Opt(DeviceData),
     'expiration' : Timestamp,
+    'tentative_session' : IDL.Opt(IDL.Principal),
   });
   const IdentityAnchorInfo = IDL.Record({
     'name' : IDL.Opt(IDL.Text),
@@ -329,6 +359,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const AuthnMethodRegistrationInfo = IDL.Record({
     'expiration' : Timestamp,
+    'session' : IDL.Opt(IDL.Principal),
     'authn_method' : IDL.Opt(AuthnMethodData),
   });
   const IdentityInfo = IDL.Record({
@@ -386,6 +417,7 @@ export const idlFactory = ({ IDL }) => {
   const OpenIdCredentialAddError = IDL.Variant({
     'OpenIdCredentialAlreadyRegistered' : IDL.Null,
     'InternalCanisterError' : IDL.Text,
+    'JwtExpired' : IDL.Null,
     'Unauthorized' : IDL.Principal,
     'JwtVerificationFailed' : IDL.Null,
   });
@@ -398,6 +430,7 @@ export const idlFactory = ({ IDL }) => {
   const OpenIdDelegationError = IDL.Variant({
     'NoSuchDelegation' : IDL.Null,
     'NoSuchAnchor' : IDL.Null,
+    'JwtExpired' : IDL.Null,
     'JwtVerificationFailed' : IDL.Null,
   });
   const OpenIDRegFinishArg = IDL.Record({ 'jwt' : JWT, 'salt' : Salt });
@@ -505,18 +538,23 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'authn_method_registration_mode_enter' : IDL.Func(
-        [IdentityNumber],
+        [IdentityNumber, IDL.Opt(RegistrationId)],
         [
           IDL.Variant({
             'Ok' : IDL.Record({ 'expiration' : Timestamp }),
-            'Err' : IDL.Null,
+            'Err' : AuthnMethodRegistrationModeEnterError,
           }),
         ],
         [],
       ),
     'authn_method_registration_mode_exit' : IDL.Func(
-        [IdentityNumber],
-        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Null })],
+        [IdentityNumber, IDL.Opt(AuthnMethodData)],
+        [
+          IDL.Variant({
+            'Ok' : IDL.Null,
+            'Err' : AuthnMethodRegistrationModeExitError,
+          }),
+        ],
         [],
       ),
     'authn_method_remove' : IDL.Func(
@@ -535,6 +573,21 @@ export const idlFactory = ({ IDL }) => {
           IDL.Variant({
             'Ok' : IDL.Null,
             'Err' : AuthnMethodSecuritySettingsReplaceError,
+          }),
+        ],
+        [],
+      ),
+    'authn_method_session_info' : IDL.Func(
+        [IdentityNumber],
+        [IDL.Opt(AuthnMethodSessionInfo)],
+        ['query'],
+      ),
+    'authn_method_session_register' : IDL.Func(
+        [IdentityNumber],
+        [
+          IDL.Variant({
+            'Ok' : AuthnMethodConfirmationCode,
+            'Err' : AuthnMethodRegisterError,
           }),
         ],
         [],
@@ -651,6 +704,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'init_salt' : IDL.Func([], [], []),
     'lookup' : IDL.Func([UserNumber], [IDL.Vec(DeviceData)], ['query']),
+    'lookup_by_registration_mode_id' : IDL.Func(
+        [RegistrationId],
+        [IDL.Opt(IdentityNumber)],
+        ['query'],
+      ),
     'lookup_device_key' : IDL.Func(
         [IDL.Vec(IDL.Nat8)],
         [IDL.Opt(DeviceKeyWithAnchor)],
@@ -739,7 +797,7 @@ export const idlFactory = ({ IDL }) => {
   });
 };
 export const init = ({ IDL }) => {
-  const OpenIdConfig = IDL.Record({ 'client_id' : IDL.Text });
+  const GoogleOpenIdConfig = IDL.Record({ 'client_id' : IDL.Text });
   const ArchiveConfig = IDL.Record({
     'polling_interval_ns' : IDL.Nat64,
     'entries_buffer_limit' : IDL.Nat64,
@@ -753,6 +811,16 @@ export const init = ({ IDL }) => {
       'hash_mode' : IDL.Opt(IDL.Bool),
       'api_host' : IDL.Opt(IDL.Text),
     }),
+  });
+  const OpenIdConfig = IDL.Record({
+    'auth_uri' : IDL.Text,
+    'jwks_uri' : IDL.Text,
+    'logo' : IDL.Text,
+    'name' : IDL.Text,
+    'fedcm_uri' : IDL.Opt(IDL.Text),
+    'issuer' : IDL.Text,
+    'auth_scope' : IDL.Vec(IDL.Text),
+    'client_id' : IDL.Text,
   });
   const CaptchaConfig = IDL.Record({
     'max_unsolved_captchas' : IDL.Nat64,
@@ -775,7 +843,7 @@ export const init = ({ IDL }) => {
   });
   const InternetIdentityInit = IDL.Record({
     'fetch_root_key' : IDL.Opt(IDL.Bool),
-    'openid_google' : IDL.Opt(IDL.Opt(OpenIdConfig)),
+    'openid_google' : IDL.Opt(IDL.Opt(GoogleOpenIdConfig)),
     'is_production' : IDL.Opt(IDL.Bool),
     'enable_dapps_explorer' : IDL.Opt(IDL.Bool),
     'assigned_user_number_range' : IDL.Opt(IDL.Tuple(IDL.Nat64, IDL.Nat64)),
@@ -783,7 +851,10 @@ export const init = ({ IDL }) => {
     'archive_config' : IDL.Opt(ArchiveConfig),
     'canister_creation_cycles_cost' : IDL.Opt(IDL.Nat64),
     'analytics_config' : IDL.Opt(IDL.Opt(AnalyticsConfig)),
+    'feature_flag_enable_generic_open_id_fe' : IDL.Opt(IDL.Bool),
     'related_origins' : IDL.Opt(IDL.Vec(IDL.Text)),
+    'feature_flag_continue_from_another_device' : IDL.Opt(IDL.Bool),
+    'openid_configs' : IDL.Opt(IDL.Vec(OpenIdConfig)),
     'captcha_config' : IDL.Opt(CaptchaConfig),
     'dummy_auth' : IDL.Opt(IDL.Opt(DummyAuthConfig)),
     'register_rate_limit' : IDL.Opt(RateLimitConfig),

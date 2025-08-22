@@ -50,7 +50,9 @@ type AuthnMethodConfirmationCode = record {
   expiration : Timestamp;
 };
 type AuthnMethodConfirmationError = variant {
+  InternalCanisterError : text;
   RegistrationModeOff;
+  Unauthorized : principal;
   NoAuthnMethodToConfirm;
   WrongCode : record { retries_left : nat8 };
 };
@@ -73,7 +75,20 @@ type AuthnMethodRegisterError = variant {
 };
 type AuthnMethodRegistrationInfo = record {
   expiration : Timestamp;
+  session : opt principal;
   authn_method : opt AuthnMethodData;
+};
+type AuthnMethodRegistrationModeEnterError = variant {
+  InvalidRegistrationId : text;
+  InternalCanisterError : text;
+  AlreadyInProgress;
+  Unauthorized : principal;
+};
+type AuthnMethodRegistrationModeExitError = variant {
+  InternalCanisterError : text;
+  RegistrationModeOff;
+  Unauthorized : principal;
+  InvalidMetadata : text;
 };
 type AuthnMethodReplaceError = variant {
   AuthnMethodNotFound;
@@ -84,6 +99,7 @@ type AuthnMethodSecuritySettings = record {
   purpose : AuthnMethodPurpose;
 };
 type AuthnMethodSecuritySettingsReplaceError = variant { AuthnMethodNotFound };
+type AuthnMethodSessionInfo = record { name : opt text };
 type BufferedArchiveEntry = record {
   sequence_number : nat64;
   entry : blob;
@@ -147,6 +163,7 @@ type DeviceProtection = variant { unprotected; protected };
 type DeviceRegistrationInfo = record {
   tentative_device : opt DeviceData;
   expiration : Timestamp;
+  tentative_session : opt principal;
 };
 type DeviceWithUsage = record {
   alias : text;
@@ -181,6 +198,7 @@ type GetIdAliasRequest = record {
   relying_party : FrontendHostname;
   identity_number : IdentityNumber;
 };
+type GoogleOpenIdConfig = record { client_id : text };
 type HeaderField = record { text; text };
 type HttpRequest = record {
   url : text;
@@ -260,7 +278,7 @@ type IdentityPropertiesReplaceError = variant {
 };
 type InternetIdentityInit = record {
   fetch_root_key : opt bool;
-  openid_google : opt opt OpenIdConfig;
+  openid_google : opt opt GoogleOpenIdConfig;
   is_production : opt bool;
   enable_dapps_explorer : opt bool;
   assigned_user_number_range : opt record { nat64; nat64 };
@@ -268,7 +286,10 @@ type InternetIdentityInit = record {
   archive_config : opt ArchiveConfig;
   canister_creation_cycles_cost : opt nat64;
   analytics_config : opt opt AnalyticsConfig;
+  feature_flag_enable_generic_open_id_fe : opt bool;
   related_origins : opt vec text;
+  feature_flag_continue_from_another_device : opt bool;
+  openid_configs : opt vec OpenIdConfig;
   captcha_config : opt CaptchaConfig;
   dummy_auth : opt opt DummyAuthConfig;
   register_rate_limit : opt RateLimitConfig;
@@ -290,6 +311,7 @@ type KeyType = variant {
   unknown;
   browser_storage_key;
 };
+type LookupByRegistrationIdError = variant { InvalidRegistrationId : text };
 type MetadataMap = vec record {
   text;
   variant { map : MetadataMap; string : text; bytes : blob };
@@ -299,7 +321,16 @@ type MetadataMapV2 = vec record {
   variant { Map : MetadataMapV2; String : text; Bytes : blob };
 };
 type OpenIDRegFinishArg = record { jwt : JWT; salt : Salt };
-type OpenIdConfig = record { client_id : text };
+type OpenIdConfig = record {
+  auth_uri : text;
+  jwks_uri : text;
+  logo : text;
+  name : text;
+  fedcm_uri : opt text;
+  issuer : text;
+  auth_scope : vec text;
+  client_id : text;
+};
 type OpenIdCredential = record {
   aud : Aud;
   iss : Iss;
@@ -310,6 +341,7 @@ type OpenIdCredential = record {
 type OpenIdCredentialAddError = variant {
   OpenIdCredentialAlreadyRegistered;
   InternalCanisterError : text;
+  JwtExpired;
   Unauthorized : principal;
   JwtVerificationFailed;
 };
@@ -322,6 +354,7 @@ type OpenIdCredentialRemoveError = variant {
 type OpenIdDelegationError = variant {
   NoSuchDelegation;
   NoSuchAnchor;
+  JwtExpired;
   JwtVerificationFailed;
 };
 type OpenIdPrepareDelegationResponse = record {
@@ -360,6 +393,7 @@ type RegistrationFlowNextStep = variant {
   CheckCaptcha : record { captcha_png_base64 : text };
   Finish;
 };
+type RegistrationId = text;
 type Salt = blob;
 type SessionKey = PublicKey;
 type SignedDelegation = record { signature : blob; delegation : Delegation };
@@ -420,12 +454,19 @@ service : (opt InternetIdentityInit) -> {
         Err : AuthnMethodRegisterError;
       },
     );
-  authn_method_registration_mode_enter : (IdentityNumber) -> (
-      variant { Ok : record { expiration : Timestamp }; Err },
+  authn_method_registration_mode_enter : (
+      IdentityNumber,
+      opt RegistrationId,
+    ) -> (
+      variant {
+        Ok : record { expiration : Timestamp };
+        Err : AuthnMethodRegistrationModeEnterError;
+      },
     );
-  authn_method_registration_mode_exit : (IdentityNumber) -> (
-      variant { Ok; Err },
-    );
+  authn_method_registration_mode_exit : (
+      IdentityNumber,
+      opt AuthnMethodData,
+    ) -> (variant { Ok; Err : AuthnMethodRegistrationModeExitError });
   authn_method_remove : (IdentityNumber, PublicKey) -> (variant { Ok; Err });
   authn_method_replace : (IdentityNumber, PublicKey, AuthnMethodData) -> (
       variant { Ok; Err : AuthnMethodReplaceError },
@@ -435,6 +476,15 @@ service : (opt InternetIdentityInit) -> {
       PublicKey,
       AuthnMethodSecuritySettings,
     ) -> (variant { Ok; Err : AuthnMethodSecuritySettingsReplaceError });
+  authn_method_session_info : (IdentityNumber) -> (
+      opt AuthnMethodSessionInfo,
+    ) query;
+  authn_method_session_register : (IdentityNumber) -> (
+      variant {
+        Ok : AuthnMethodConfirmationCode;
+        Err : AuthnMethodRegisterError;
+      },
+    );
   check_captcha : (CheckCaptchaArg) -> (
       variant { Ok : IdRegNextStepResult; Err : CheckCaptchaError },
     );
@@ -490,6 +540,9 @@ service : (opt InternetIdentityInit) -> {
     );
   init_salt : () -> ();
   lookup : (UserNumber) -> (vec DeviceData) query;
+  lookup_by_registration_mode_id : (RegistrationId) -> (
+      opt IdentityNumber,
+    ) query;
   lookup_device_key : (blob) -> (opt DeviceKeyWithAnchor) query;
   openid_credential_add : (IdentityNumber, JWT, Salt) -> (
       variant { Ok; Err : OpenIdCredentialAddError },

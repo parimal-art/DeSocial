@@ -8,6 +8,14 @@ export interface Comment {
   'author' : Principal,
   'comment_id' : bigint,
 }
+export interface Message {
+  'id' : bigint,
+  'to' : Principal,
+  'content' : string,
+  'from' : Principal,
+  'seen' : boolean,
+  'created_at' : bigint,
+}
 export interface Notification {
   'read' : boolean,
   'created_at' : bigint,
@@ -20,7 +28,8 @@ export interface Notification {
 export type NotificationType = { 'Follow' : null } |
   { 'Like' : null } |
   { 'Repost' : null } |
-  { 'Comment' : null };
+  { 'Comment' : null } |
+  { 'Message' : null };
 export interface Post {
   'post_id' : bigint,
   'content' : string,
@@ -67,10 +76,12 @@ export interface _SERVICE {
   >,
   'get_all_posts' : ActorMethod<[], Array<Post>>,
   'get_all_users' : ActorMethod<[], Array<UserProfile>>,
+  'get_conversation' : ActorMethod<[Principal], Array<Message>>,
   'get_current_user' : ActorMethod<[], [] | [UserProfile]>,
   'get_feed' : ActorMethod<[], Array<Post>>,
   'get_followers' : ActorMethod<[Principal], Array<Principal>>,
   'get_following' : ActorMethod<[Principal], Array<Principal>>,
+  'get_inbox' : ActorMethod<[], Array<Principal>>,
   'get_notifications' : ActorMethod<[], Array<Notification>>,
   'get_user' : ActorMethod<[Principal], [] | [UserProfile]>,
   'get_user_posts' : ActorMethod<[Principal], Array<Post>>,
@@ -81,6 +92,11 @@ export interface _SERVICE {
     { 'Ok' : string } |
       { 'Err' : string }
   >,
+  'mark_seen' : ActorMethod<
+    [Principal, bigint],
+    { 'Ok' : string } |
+      { 'Err' : string }
+  >,
   'register_user' : ActorMethod<
     [string, string, string, string],
     { 'Ok' : UserProfile } |
@@ -88,6 +104,11 @@ export interface _SERVICE {
   >,
   'repost_post' : ActorMethod<[bigint], { 'Ok' : Post } | { 'Err' : string }>,
   'search_users' : ActorMethod<[string], Array<UserProfile>>,
+  'send_message' : ActorMethod<
+    [Principal, string],
+    { 'Ok' : Message } |
+      { 'Err' : string }
+  >,
   'unfollow_user' : ActorMethod<
     [Principal],
     { 'Ok' : string } |

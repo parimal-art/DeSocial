@@ -8,6 +8,7 @@ import {
   User,
   Users,
   X,
+  MessageSquare,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import CreatePost from "./CreatePost";
@@ -17,6 +18,7 @@ import Feed from "./Feed";
 import FollowersFollowing from "./FollowersFollowing";
 import Notifications from "./Notifications";
 import UserProfile from "./UserProfile";
+import Messenger from "./Messenger/Messenger"; // NEW
 
 const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
   const [currentView, setCurrentView] = useState("feed");
@@ -59,6 +61,7 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
     { id: "createPost", label: "Create Post", icon: PlusCircle },
     { id: "editProfile", label: "Edit Profile", icon: User },
     { id: "explore", label: "Explore Users", icon: Search },
+    { id: "messages", label: "Messages", icon: MessageSquare }, // NEW
     {
       id: "notifications",
       label: "Notifications",
@@ -97,6 +100,8 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
             onUserProfileView={handleUserProfileView}
           />
         );
+      case "messages": // NEW
+        return <Messenger actor={actor} user={user} />;
       case "notifications":
         return (
           <Notifications
@@ -153,10 +158,7 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
         </div>
         <div className="flex items-center space-x-2">
           <img
-            src={
-              user.profile_image ||
-              "/no-profile.jpg"
-            }
+            src={user.profile_image || "/no-profile.jpg"}
             alt={user.name}
             className="h-8 w-8 rounded-full object-cover"
           />
@@ -187,10 +189,7 @@ const Dashboard = ({ actor, user, principal, onLogout, onUserUpdate }) => {
               onClick={() => handleUserProfileView(user.user_principal)}
             >
               <img
-                src={
-                  user.profile_image ||
-                  "/no-profile.jpg"
-                }
+                src={user.profile_image || "/no-profile.jpg"}
                 alt={user.name}
                 className="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
               />

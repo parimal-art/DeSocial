@@ -1,13 +1,25 @@
 use candid::{CandidType, Deserialize, Principal};
-use ic_cdk::{
-    api::{caller, time},
-    query, update,
-};
-candid::export_service!();
-use std::collections::BTreeMap;
+use ic_cdk::api::{caller, time};
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 
-// Data Structures 
+// ---------- Candid interface export ----------
+candid::export_service!();
+
+// =====================
+// Data Structures
+// =====================
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct Message {
+    pub id: u64,
+    pub from: Principal,
+    pub to: Principal,
+    pub content: String,
+    pub created_at: u64,
+    pub seen: bool,
+}
+
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct UserProfile {
     pub user_principal: Principal,
@@ -59,19 +71,44 @@ pub enum NotificationType {
     Comment,
     Follow,
     Repost,
+    Message,
 }
 
+// =====================
 // Storage
+// =====================
+
 thread_local! {
+    // Core app storages
     static USERS: RefCell<BTreeMap<Principal, UserProfile>> = RefCell::new(BTreeMap::new());
     static POSTS: RefCell<BTreeMap<u64, Post>> = RefCell::new(BTreeMap::new());
     static NOTIFICATIONS: RefCell<BTreeMap<u64, Notification>> = RefCell::new(BTreeMap::new());
+
     static POST_COUNTER: RefCell<u64> = RefCell::new(0);
     static COMMENT_COUNTER: RefCell<u64> = RefCell::new(0);
     static NOTIFICATION_COUNTER: RefCell<u64> = RefCell::new(0);
+
+    // Messaging
+    static MESSAGES: RefCell<BTreeMap<(Principal, Principal), Vec<Message>>> = RefCell::new(BTreeMap::new());
+    static MESSAGE_COUNTER: RefCell<u64> = RefCell::new(0);
 }
 
-// Helper functions
+// =====================
+// Helpers
+// =====================
+
+fn convo_key(a: Principal, b: Principal) -> (Principal, Principal) {
+    if a.to_text() <= b.to_text() { (a, b) } else { (b, a) }
+}
+
+fn next_message_id() -> u64 {
+    MESSAGE_COUNTER.with(|c| {
+        let mut m = c.borrow_mut();
+        *m += 1;
+        *m
+    })
+}
+
 fn get_next_post_id() -> u64 {
     POST_COUNTER.with(|counter| {
         let mut count = counter.borrow_mut();
@@ -96,8 +133,27 @@ fn get_next_notification_id() -> u64 {
     })
 }
 
-// User Management Functions
-#[update]
+/// NEW: DM policy — allowed if EITHER side follows the other
+fn can_dm(me: Principal, to: Principal) -> bool {
+    USERS.with(|u| {
+        let u = u.borrow();
+        let me_follows_to = u
+            .get(&me)
+            .map(|me_user| me_user.following.contains(&to))
+            .unwrap_or(false);
+        let to_follows_me = u
+            .get(&to)
+            .map(|to_user| to_user.following.contains(&me))
+            .unwrap_or(false);
+        me_follows_to || to_follows_me
+    })
+}
+
+// =====================
+// User Management
+// =====================
+
+#[ic_cdk::update]
 pub fn register_user(name: String, bio: String, profile_image: String, cover_image: String) -> Result<UserProfile, String> {
     let principal = caller();
 
@@ -128,26 +184,23 @@ pub fn register_user(name: String, bio: String, profile_image: String, cover_ima
     })
 }
 
-#[query]
+#[ic_cdk::query]
 pub fn get_user(user_principal: Principal) -> Option<UserProfile> {
-    USERS.with(|users| {
-        users.borrow().get(&user_principal).cloned()
-    })
+    USERS.with(|users| users.borrow().get(&user_principal).cloned())
 }
 
-#[query]
+#[ic_cdk::query]
 pub fn get_current_user() -> Option<UserProfile> {
     let principal = caller();
     get_user(principal)
 }
 
-#[update]
+#[ic_cdk::update]
 pub fn update_profile(name: String, bio: String, profile_image: String, cover_image: String) -> Result<UserProfile, String> {
     let principal = caller();
 
     USERS.with(|users| {
         let mut users = users.borrow_mut();
-
         match users.get_mut(&principal) {
             Some(user) => {
                 user.name = name;
@@ -161,20 +214,123 @@ pub fn update_profile(name: String, bio: String, profile_image: String, cover_im
     })
 }
 
-// Post Management Functions
-#[update]
+// =====================
+// Messaging
+// =====================
+
+/// Send a message (allowed if either side follows the other)
+#[ic_cdk::update]
+pub fn send_message(to: Principal, content: String) -> Result<Message, String> {
+    let me = caller();
+    if content.trim().is_empty() { return Err("Message cannot be empty".into()); }
+
+    // both users must exist
+    let (me_exists, to_exists) = USERS.with(|u| {
+        let u = u.borrow();
+        (u.contains_key(&me), u.contains_key(&to))
+    });
+    if !me_exists { return Err("Sender not registered".into()); }
+    if !to_exists { return Err("Receiver not found".into()); }
+
+    // NEW policy: allowed if EITHER side follows the other
+    if !can_dm(me, to) {
+        return Err("You can only message users you follow or who follow you".into());
+    }
+
+    let msg = Message {
+        id: next_message_id(),
+        from: me,
+        to,
+        content,
+        created_at: time(),
+        seen: false,
+    };
+
+    // persist message
+    MESSAGES.with(|mm| {
+        let mut mm = mm.borrow_mut();
+        let key = convo_key(me, to);
+        mm.entry(key).or_default().push(msg.clone());
+    });
+
+    // notify receiver
+    let _ = add_notification_internal(
+        me,
+        to,
+        NotificationType::Message,
+        "sent you a message".to_string(),
+    );
+
+    Ok(msg)
+}
+
+/// Handy: can current caller DM `to`?
+#[ic_cdk::query]
+pub fn can_message(to: Principal) -> bool {
+    can_dm(caller(), to)
+}
+
+/// Get full conversation with someone (sorted by time asc)
+#[ic_cdk::query]
+pub fn get_conversation(with_user: Principal) -> Vec<Message> {
+    let me = caller();
+    MESSAGES.with(|mm| {
+        let key = convo_key(me, with_user);
+        let mut v = mm.borrow().get(&key).cloned().unwrap_or_default();
+        v.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+        v
+    })
+}
+
+/// Mark as seen (all messages FROM `with_user` TO me up to last_id)
+#[ic_cdk::update]
+pub fn mark_seen(with_user: Principal, last_id: u64) -> Result<String, String> {
+    let me = caller();
+    MESSAGES.with(|mm| {
+        let key = convo_key(me, with_user);
+        let mut_map = &mut *mm.borrow_mut();
+        if let Some(list) = mut_map.get_mut(&key) {
+            for m in list.iter_mut() {
+                if m.to == me && m.from == with_user && m.id <= last_id { m.seen = true; }
+            }
+            Ok("seen updated".into())
+        } else {
+            Err("No conversation".into())
+        }
+    })
+}
+
+/// List conversation peers for inbox
+#[ic_cdk::query]
+pub fn get_inbox() -> Vec<Principal> {
+    let me = caller();
+    MESSAGES.with(|mm| {
+        mm.borrow()
+            .keys()
+            .filter_map(|(a, b)| {
+                if *a == me { Some(b.clone()) }
+                else if *b == me { Some(a.clone()) }
+                else { None }
+            })
+            .collect()
+    })
+}
+
+// =====================
+// Posts
+// =====================
+
+#[ic_cdk::update]
 pub fn create_post(content: String, image: Option<String>, video: Option<String>) -> Result<Post, String> {
     let principal = caller();
-    
+
     if content.trim().is_empty() && image.is_none() && video.is_none() {
         return Err("Post must have content, image, or video".to_string());
     }
 
     // Check if user exists
     USERS.with(|users| {
-        if !users.borrow().contains_key(&principal) {
-            return Err("User not registered".to_string());
-        }
+        if !users.borrow().contains_key(&principal) { return Err("User not registered".to_string()); }
         Ok(())
     })?;
 
@@ -192,24 +348,21 @@ pub fn create_post(content: String, image: Option<String>, video: Option<String>
         original_post_id: None,
     };
 
-    POSTS.with(|posts| {
-        posts.borrow_mut().insert(post_id, post.clone());
-    });
+    POSTS.with(|posts| { posts.borrow_mut().insert(post_id, post.clone()); });
 
     Ok(post)
 }
 
-#[query]
+#[ic_cdk::query]
 pub fn get_all_posts() -> Vec<Post> {
     POSTS.with(|posts| {
         let mut all_posts: Vec<Post> = posts.borrow().values().cloned().collect();
-        // Sort by creation time (newest first)
         all_posts.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         all_posts
     })
 }
 
-#[query]
+#[ic_cdk::query]
 pub fn get_user_posts(user_principal: Principal) -> Vec<Post> {
     POSTS.with(|posts| {
         let mut user_posts: Vec<Post> = posts
@@ -223,24 +376,22 @@ pub fn get_user_posts(user_principal: Principal) -> Vec<Post> {
     })
 }
 
-#[update]
+#[ic_cdk::update]
 pub fn like_post(post_id: u64) -> Result<Post, String> {
     let principal = caller();
-    
+
     POSTS.with(|posts| {
         let mut posts = posts.borrow_mut();
-        
         match posts.get_mut(&post_id) {
             Some(post) => {
                 if post.likes.contains(&principal) {
                     post.likes.retain(|p| *p != principal);
                 } else {
                     post.likes.push(principal);
-                    
                     // Send notification to post author if not self-like
-                    if post.author != principal {
+                    if post.author != caller() {
                         let _ = add_notification_internal(
-                            principal,
+                            caller(),
                             post.author,
                             NotificationType::Like,
                             "liked your post".to_string(),
@@ -254,30 +405,20 @@ pub fn like_post(post_id: u64) -> Result<Post, String> {
     })
 }
 
-#[update]
+#[ic_cdk::update]
 pub fn comment_post(post_id: u64, content: String) -> Result<Comment, String> {
     let principal = caller();
-    
-    if content.trim().is_empty() {
-        return Err("Comment cannot be empty".to_string());
-    }
+
+    if content.trim().is_empty() { return Err("Comment cannot be empty".to_string()); }
 
     let comment_id = get_next_comment_id();
-    let comment = Comment {
-        comment_id,
-        author: principal,
-        content,
-        created_at: time(),
-    };
+    let comment = Comment { comment_id, author: principal, content, created_at: time() };
 
     POSTS.with(|posts| {
         let mut posts = posts.borrow_mut();
-        
         match posts.get_mut(&post_id) {
             Some(post) => {
                 post.comments.push(comment.clone());
-                
-                // Send notification to post author if not self-comment
                 if post.author != principal {
                     let _ = add_notification_internal(
                         principal,
@@ -286,7 +427,6 @@ pub fn comment_post(post_id: u64, content: String) -> Result<Comment, String> {
                         "commented on your post".to_string(),
                     );
                 }
-                
                 Ok(comment)
             }
             None => Err("Post not found".to_string()),
@@ -294,26 +434,19 @@ pub fn comment_post(post_id: u64, content: String) -> Result<Comment, String> {
     })
 }
 
-#[update]
+#[ic_cdk::update]
 pub fn repost_post(post_id: u64) -> Result<Post, String> {
     let principal = caller();
-    
-    // Get original post
-    let original_post = POSTS.with(|posts| {
-        posts.borrow().get(&post_id).cloned()
-    }).ok_or("Original post not found")?;
+
+    let original_post = POSTS.with(|posts| posts.borrow().get(&post_id).cloned())
+        .ok_or("Original post not found")?;
 
     // Check if user already reposted this post
     let existing_repost = POSTS.with(|posts| {
-        posts.borrow().values().any(|post| {
-            post.author == principal && 
-            post.original_post_id == Some(post_id)
-        })
+        posts.borrow().values().any(|post| post.author == principal && post.original_post_id == Some(post_id))
     });
 
-    if existing_repost {
-        return Err("Post already reposted".to_string());
-    }
+    if existing_repost { return Err("Post already reposted".to_string()); }
 
     let new_post_id = get_next_post_id();
     let repost = Post {
@@ -329,11 +462,8 @@ pub fn repost_post(post_id: u64) -> Result<Post, String> {
         original_post_id: Some(post_id),
     };
 
-    POSTS.with(|posts| {
-        posts.borrow_mut().insert(new_post_id, repost.clone());
-    });
+    POSTS.with(|posts| { posts.borrow_mut().insert(new_post_id, repost.clone()); });
 
-    // Send notification to original post author
     if original_post.author != principal {
         let _ = add_notification_internal(
             principal,
@@ -346,45 +476,30 @@ pub fn repost_post(post_id: u64) -> Result<Post, String> {
     Ok(repost)
 }
 
-#[update]
+#[ic_cdk::update]
 pub fn delete_post(post_id: u64) -> Result<String, String> {
     let principal = caller();
-    
+
     POSTS.with(|posts| {
         let mut posts = posts.borrow_mut();
-        
-        // Check if post exists
         match posts.get(&post_id) {
             Some(post) => {
-                // Check if caller is the author
-                if post.author != principal {
-                    return Err("Unauthorized: Only the author can delete this post".to_string());
-                }
-                
-                // Remove the post
+                if post.author != principal { return Err("Unauthorized: Only the author can delete this post".to_string()); }
                 posts.remove(&post_id);
-                
-                // Also remove any reposts of this post
                 let reposts_to_remove: Vec<u64> = posts
                     .iter()
                     .filter(|(_, p)| p.original_post_id == Some(post_id))
                     .map(|(id, _)| *id)
                     .collect();
-                
-                for repost_id in reposts_to_remove {
-                    posts.remove(&repost_id);
-                }
-                
+                for repost_id in reposts_to_remove { posts.remove(&repost_id); }
                 Ok("Post deleted successfully".to_string())
-            },
+            }
             None => Err("Post not found".to_string()),
         }
     })
 }
 
-
-// Edit Post Functions
-#[update]
+#[ic_cdk::update]
 pub fn edit_post(post_id: u64, new_content: String, new_image: Option<String>, new_video: Option<String>) -> Result<Post, String> {
     let principal = caller();
 
@@ -396,10 +511,7 @@ pub fn edit_post(post_id: u64, new_content: String, new_image: Option<String>, n
         let mut posts = posts.borrow_mut();
         match posts.get_mut(&post_id) {
             Some(post) => {
-                if post.author != principal {
-                    return Err("Unauthorized: Only the author can edit this post".to_string());
-                }
-
+                if post.author != principal { return Err("Unauthorized: Only the author can edit this post".to_string()); }
                 post.content = new_content;
                 post.image = new_image;
                 post.video = new_video;
@@ -410,42 +522,31 @@ pub fn edit_post(post_id: u64, new_content: String, new_image: Option<String>, n
     })
 }
 
+// =====================
+// Follow System
+// =====================
 
-// Follow System Functions
-#[update]
+#[ic_cdk::update]
 pub fn follow_user(target_principal: Principal) -> Result<String, String> {
     let principal = caller();
-    
-    if principal == target_principal {
-        return Err("Cannot follow yourself".to_string());
-    }
+
+    if principal == target_principal { return Err("Cannot follow yourself".to_string()); }
 
     USERS.with(|users| {
         let mut users = users.borrow_mut();
-        
-        // Check if target user exists
-        if !users.contains_key(&target_principal) {
-            return Err("Target user not found".to_string());
-        }
 
-        // Check if current user exists
-        if !users.contains_key(&principal) {
-            return Err("Current user not registered".to_string());
-        }
+        if !users.contains_key(&target_principal) { return Err("Target user not found".to_string()); }
+        if !users.contains_key(&principal) { return Err("Current user not registered".to_string()); }
 
-        // Add to following list of current user
         if let Some(current_user) = users.get_mut(&principal) {
             if !current_user.following.contains(&target_principal) {
-                current_user.following.push(target_principal);
+                current_user.following.push(target_principal.clone());
             }
         }
 
-        // Add to followers list of target user
         if let Some(target_user) = users.get_mut(&target_principal) {
             if !target_user.followers.contains(&principal) {
-                target_user.followers.push(principal);
-                
-                // Send notification
+                target_user.followers.push(principal.clone());
                 let _ = add_notification_internal(
                     principal,
                     target_principal,
@@ -459,19 +560,16 @@ pub fn follow_user(target_principal: Principal) -> Result<String, String> {
     })
 }
 
-#[update]
+#[ic_cdk::update]
 pub fn unfollow_user(target_principal: Principal) -> Result<String, String> {
     let principal = caller();
-    
+
     USERS.with(|users| {
         let mut users = users.borrow_mut();
-        
-        // Remove from following list of current user
+
         if let Some(current_user) = users.get_mut(&principal) {
             current_user.following.retain(|p| *p != target_principal);
         }
-
-        // Remove from followers list of target user
         if let Some(target_user) = users.get_mut(&target_principal) {
             target_user.followers.retain(|p| *p != principal);
         }
@@ -480,10 +578,9 @@ pub fn unfollow_user(target_principal: Principal) -> Result<String, String> {
     })
 }
 
-#[query]
+#[ic_cdk::query]
 pub fn is_following(target_principal: Principal) -> bool {
     let principal = caller();
-    
     USERS.with(|users| {
         users.borrow()
             .get(&principal)
@@ -492,7 +589,7 @@ pub fn is_following(target_principal: Principal) -> bool {
     })
 }
 
-#[query]
+#[ic_cdk::query]
 pub fn get_followers(user_principal: Principal) -> Vec<Principal> {
     USERS.with(|users| {
         users.borrow()
@@ -502,7 +599,7 @@ pub fn get_followers(user_principal: Principal) -> Vec<Principal> {
     })
 }
 
-#[query]
+#[ic_cdk::query]
 pub fn get_following(user_principal: Principal) -> Vec<Principal> {
     USERS.with(|users| {
         users.borrow()
@@ -512,7 +609,10 @@ pub fn get_following(user_principal: Principal) -> Vec<Principal> {
     })
 }
 
-// Notification Functions
+// =====================
+// Notifications
+// =====================
+
 fn add_notification_internal(
     sender: Principal,
     receiver: Principal,
@@ -537,10 +637,9 @@ fn add_notification_internal(
     Ok(notification)
 }
 
-#[query]
+#[ic_cdk::query]
 pub fn get_notifications() -> Vec<Notification> {
     let principal = caller();
-    
     NOTIFICATIONS.with(|notifications| {
         let mut user_notifications: Vec<Notification> = notifications
             .borrow()
@@ -553,13 +652,11 @@ pub fn get_notifications() -> Vec<Notification> {
     })
 }
 
-#[update]
+#[ic_cdk::update]
 pub fn mark_notification_read(notification_id: u64) -> Result<String, String> {
     let principal = caller();
-    
     NOTIFICATIONS.with(|notifications| {
         let mut notifications = notifications.borrow_mut();
-        
         match notifications.get_mut(&notification_id) {
             Some(notification) if notification.receiver == principal => {
                 notification.read = true;
@@ -571,18 +668,18 @@ pub fn mark_notification_read(notification_id: u64) -> Result<String, String> {
     })
 }
 
-// Explore Functions
-#[query]
+// =====================
+// Explore / Feed
+// =====================
+
+#[ic_cdk::query]
 pub fn get_all_users() -> Vec<UserProfile> {
-    USERS.with(|users| {
-        users.borrow().values().cloned().collect()
-    })
+    USERS.with(|users| users.borrow().values().cloned().collect())
 }
 
-#[query]
+#[ic_cdk::query]
 pub fn search_users(query: String) -> Vec<UserProfile> {
     let query_lower = query.to_lowercase();
-    
     USERS.with(|users| {
         users.borrow()
             .values()
@@ -595,12 +692,10 @@ pub fn search_users(query: String) -> Vec<UserProfile> {
     })
 }
 
-// Feed Functions
-#[query]
+#[ic_cdk::query]
 pub fn get_feed() -> Vec<Post> {
     let principal = caller();
-    
-    // Get user's following list
+
     let following = USERS.with(|users| {
         users.borrow()
             .get(&principal)
@@ -612,30 +707,24 @@ pub fn get_feed() -> Vec<Post> {
         let mut feed_posts: Vec<Post> = posts
             .borrow()
             .values()
-            .filter(|post| {
-                // Include posts from users being followed or own posts
-                following.contains(&post.author) || post.author == principal
-            })
+            .filter(|post| following.contains(&post.author) || post.author == principal)
             .cloned()
             .collect();
-        
-        // If following list is empty or feed is small, include some random posts
+
         if feed_posts.len() < 10 {
             let all_posts: Vec<Post> = posts.borrow().values().cloned().collect();
             feed_posts.extend(all_posts.into_iter().take(20));
         }
-        
-        // Remove duplicates and sort by creation time
+
         feed_posts.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         feed_posts.dedup_by(|a, b| a.post_id == b.post_id);
-        
         feed_posts
     })
 }
 
-// use candid::export_service;
+// =====================
+// Candid (for dfx generate)
+// =====================
 
 #[ic_cdk::query(name = "__get_candid_interface_tmp_hack")]
-fn export_candid() -> String {
-    __export_service()
-}
+fn export_candid() -> String { __export_service() }

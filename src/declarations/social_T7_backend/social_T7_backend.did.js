@@ -27,11 +27,20 @@ export const idlFactory = ({ IDL }) => {
     'followers' : IDL.Vec(IDL.Principal),
     'following' : IDL.Vec(IDL.Principal),
   });
+  const Message = IDL.Record({
+    'id' : IDL.Nat64,
+    'to' : IDL.Principal,
+    'content' : IDL.Text,
+    'from' : IDL.Principal,
+    'seen' : IDL.Bool,
+    'created_at' : IDL.Nat64,
+  });
   const NotificationType = IDL.Variant({
     'Follow' : IDL.Null,
     'Like' : IDL.Null,
     'Repost' : IDL.Null,
     'Comment' : IDL.Null,
+    'Message' : IDL.Null,
   });
   const Notification = IDL.Record({
     'read' : IDL.Bool,
@@ -70,6 +79,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'get_all_posts' : IDL.Func([], [IDL.Vec(Post)], ['query']),
     'get_all_users' : IDL.Func([], [IDL.Vec(UserProfile)], ['query']),
+    'get_conversation' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(Message)],
+        ['query'],
+      ),
     'get_current_user' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'get_feed' : IDL.Func([], [IDL.Vec(Post)], ['query']),
     'get_followers' : IDL.Func(
@@ -82,6 +96,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Principal)],
         ['query'],
       ),
+    'get_inbox' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'get_notifications' : IDL.Func([], [IDL.Vec(Notification)], ['query']),
     'get_user' : IDL.Func([IDL.Principal], [IDL.Opt(UserProfile)], ['query']),
     'get_user_posts' : IDL.Func([IDL.Principal], [IDL.Vec(Post)], ['query']),
@@ -96,6 +111,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text })],
         [],
       ),
+    'mark_seen' : IDL.Func(
+        [IDL.Principal, IDL.Nat64],
+        [IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text })],
+        [],
+      ),
     'register_user' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
         [IDL.Variant({ 'Ok' : UserProfile, 'Err' : IDL.Text })],
@@ -107,6 +127,11 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'search_users' : IDL.Func([IDL.Text], [IDL.Vec(UserProfile)], ['query']),
+    'send_message' : IDL.Func(
+        [IDL.Principal, IDL.Text],
+        [IDL.Variant({ 'Ok' : Message, 'Err' : IDL.Text })],
+        [],
+      ),
     'unfollow_user' : IDL.Func(
         [IDL.Principal],
         [IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text })],

@@ -1,5 +1,5 @@
 # DeSocial 🧑‍💻
-
+ updated readme
 `DeSocial` is a decentralized social media platform powered by the **Internet Computer Protocol (ICP)**. This repo sets up a full-stack Dapp using **Rust** (for backend canisters) and **React** (for the frontend).
 
 This README is written from a developer’s perspective to help you understand, run, and extend the codebase as efficiently as possible.
