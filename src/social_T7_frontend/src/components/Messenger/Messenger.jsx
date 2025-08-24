@@ -18,6 +18,12 @@ export default function Messenger({ actor, user }) {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 576) {
+      setIsMobileChat(true);
+    }
+  }, []);
+
+  useEffect(() => {
     loadInbox();
     timer.current && clearInterval(timer.current);
     timer.current = setInterval(loadInbox, 5000);
