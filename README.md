@@ -11,20 +11,43 @@ This repository contains the full-stack dApp setup using:
 Our goal: **To build the future of open networking** 🚀  
 
 ---
+## ❌ The Problem With Traditional Social Media
 
-## ✨ Features (100% Detailed)
+Traditional social media platforms are **centralized** and come with several issues:
 
-✅ **Self-sovereign Identity** – Users fully own and manage their profiles.  
-✅ **User-owned Content** – Posts are stored on ICP canisters, ensuring ownership and immutability.  
-✅ **Create / Edit / Delete Posts** – Full post lifecycle supported.  
-✅ **Social Interactions** – Like, comment, and repost any post.  
-✅ **Follow/Unfollow System** – Build decentralized connections with no central authority.  
-✅ **Real-time Messaging** – Peer-to-peer chat powered by ICP.  
-✅ **Notifications** – Instant updates for likes, comments, reposts, and follows.  
-✅ **Profile Management** – Create, edit, and view user profiles.  
-✅ **View Other Profiles** – Check posts, followers, and following of any user.  
-✅ **Sharded Canisters** – Ensures scalability and reliability under load.  
-✅ **On-chain Data Ownership** – All data is stored securely on ICP with no single point of failure.  
+- 📊 Platforms control **data, reach, and monetization**.  
+- ⚠️ They create **single points of failure** and bring higher **censorship risks**.  
+- 🔒 Algorithms are **opaque** and lead to **vendor lock-in**.  
+- ❌ Users lack **cryptographic ownership** of their identity and content.  
+
+---
+
+## ✅ Our Solution (DeSocial on ICP)
+
+DeSocial solves these problems using the **Internet Computer Protocol (ICP):**
+
+- 🔑 **Self-sovereign Identity** → Users fully own and control their profiles.  
+- 🗂️ **User-owned Content** → Posts stored on ICP canisters, secure & immutable.  
+- 🌐 **Decentralized Social Graph** → Follow/unfollow without central authority.  
+- 🧩 **Composable APIs** → Open APIs for developers to build new clients & features.  
+- ⚡ **Real-time Interactions** → Instant updates for likes, comments, reposts, and messages.  
+- 🛡️ **Trustless Infrastructure** → No single point of failure, built on Rust + ICP.  
+
+---
+
+## ✨ Key Features of DeSocial
+
+- ✅ **Self-sovereign Identity** – Users fully own and manage their profiles.  
+- ✅ **User-owned Content** – Posts are stored on ICP canisters, ensuring ownership and immutability.  
+- ✅ **Create / Edit / Delete Posts** – Users can manage **their own** posts (text / text+image / text+video).  
+- ✅ **Social Interactions** – Like, comment, and repost any post.  
+- ✅ **Follow/Unfollow System** – Build decentralized connections with no central authority.  
+- ✅ **Real-time Messaging** – Peer-to-peer chat powered by ICP.  
+- ✅ **Notifications** – Instant updates for likes, comments, reposts, follows, and messages.  
+- ✅ **Profile Management** – Create, edit, and view user profiles.  
+- ✅ **View Other Profiles** – Check posts, followers, and following of any user.  
+- ✅ **Sharded Canisters** – Ensures scalability and reliability under load.  
+- ✅ **On-chain Data Ownership** – All data stored securely on ICP, with **no single point of failure**.  
 
 ---
 
@@ -42,39 +65,76 @@ Our goal: **To build the future of open networking** 🚀
 
 ```mermaid
 flowchart TD
-    A[Register/Login] --> B[Create Profile]
-    B --> C[Create/Edit/Delete Post]
-    C --> D[Feed Updates]
-    D --> E[Like/Comment/Repost]
-    D --> F[Follow/Unfollow]
-    D --> G[Real-time Messaging]
+    %% Entry & Auth
+    I[Create Internet Identity] --> A[Register / Login]
+    A --> H[Home / Feed]
 
-    %% On-demand access from anywhere
-    M((Global Menu))
+    %% Global Menu (always accessible)
+    M((Menu))
+    H -.-> M
     A -.-> M
-    B -.-> M
-    C -.-> M
-    D -.-> M
-    E -.-> M
-    F -.-> M
-    G -.-> M
-    M --> H[View Profile]
-    M --> I[Notifications]
 
-    %% Notifications are triggered by these events
-    E --> I
-    F --> I
-    G --> I
+    %% Menu Sections
+    M --> H[Home / Feed]
+    M --> CP[Create Post]
+    M --> EP[Edit Profile]
+    M --> EX[Explore Users]
+    M --> MSG[Messages]
+    M --> NTF[Notifications]
+    M --> FF[Followers & Following]
+    M --> LO[Log Out]
+
+    %% Create Post Options
+    CP --> PT1[Text Post]
+    CP --> PT2[Text + Image Post]
+    CP --> PT3[Text + Video Post]
+
+    %% Feed → Posts
+    H --> P1[View Post]
+
+    %% User's Own Post Actions
+    P1 -->|If Owner| P2[Edit Own Post]
+    P1 -->|If Owner| P3[Delete Own Post]
+
+    %% Interactions by Any User
+    P1 --> LCR[Like / Comment / Repost]
+
+    %% Explore Users
+    EX --> OU[View Another User's Profile]
+    OU --> FF2[Follow / Unfollow]
+    OU --> OPV[View Their Posts]
+    OPV --> P1
+
+    %% Edit Profile
+    EP --> EP_DONE[Profile Updated]
+
+    %% Notifications Triggers
+    MSG --> NTF
+    LCR --> NTF
+    FF2 --> NTF
+
+    %% Session End
+    LO --> X((Log Out))
+
 
 ```
 
 ---
 
-## 🎥 Project Demo
+## 🎥 Project Demo  
 
-🔗 [Watch Demo Video](https://youtu.be/0Qh6rBteXz8?feature=shared)  
+▶️ **Demo Video:**  
+[![Watch the demo](https://img.shields.io/badge/YouTube-Watch%20Demo-red?logo=youtube&style=for-the-badge)](https://youtu.be/tky2N0JVKPs)  
 
 ---
+
+## 🌐 Try It Live  
+
+🚀 **Live Experience:**  
+[![Live Site](https://img.shields.io/badge/GitHub%20Pages-Live%20App-blue?logo=github&style=for-the-badge)](https://parimal-art.github.io/DeSocial-Page/)  
+
+---
+
 
 ## 🚀 Getting Started (Local Development)
 
