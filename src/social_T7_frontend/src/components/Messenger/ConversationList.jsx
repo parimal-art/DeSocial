@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 
+/**
+ * ConversationList.jsx
+ *
+ * Props:
+ *  - actor: { get_user, get_all_users, follow_user }
+ *  - user:  { user_principal, followers: Principal[], following: Principal[] }
+ *  - peers: Principal[]                // existing conversation peers
+ *  - activePeer: Principal | null
+ *  - onSelect: (principal) => void     // open chat with selected user
+ *  - onRefresh: () => void             // refetch user + peers from backend
+ */
 export default function ConversationList({
   actor,
   user,
@@ -13,22 +24,22 @@ export default function ConversationList({
   const [allUsers, setAllUsers] = useState([]);
   const [followLoading, setFollowLoading] = useState({});
 
-  const myPrincipalKey = user?.user_principal?.toString();
+  const myKey = user?.user_principal?.toString() || "";
   const peerKeys = useMemo(() => peers.map((p) => p.toString()), [peers]);
 
-  // followers ∪ following − peers
+  /** followers ∪ following − peers → quick-start list */
   const startersPrincipals = useMemo(() => {
     const merged = [...(user?.followers || []), ...(user?.following || [])];
     const seen = new Set();
-    const deduped = [];
+    const out = [];
     for (const p of merged) {
       const k = p.toString();
       if (!seen.has(k)) {
         seen.add(k);
-        deduped.push(p);
+        out.push(p);
       }
     }
-    return deduped.filter((p) => !peerKeys.includes(p.toString()));
+    return out.filter((p) => !peerKeys.includes(p.toString()));
   }, [user?.followers, user?.following, peerKeys]);
 
   const starterKeys = useMemo(
@@ -36,6 +47,7 @@ export default function ConversationList({
     [startersPrincipals]
   );
 
+  /** fetch profiles for peers */
   useEffect(() => {
     (async () => {
       const map = {};
@@ -49,6 +61,7 @@ export default function ConversationList({
     })();
   }, [actor, peers]);
 
+  /** fetch profiles for starters */
   useEffect(() => {
     (async () => {
       if (!startersPrincipals.length) {
@@ -66,6 +79,7 @@ export default function ConversationList({
     })();
   }, [actor, startersPrincipals]);
 
+  /** fetch all users for Discover */
   useEffect(() => {
     (async () => {
       try {
@@ -77,32 +91,37 @@ export default function ConversationList({
     })();
   }, [actor]);
 
-  const connectionKeySet = useMemo(() => {
+  /** set of people YOU already follow (not followers) */
+  const followingKeys = useMemo(() => {
     const s = new Set();
-    for (const p of user?.followers || []) s.add(p.toString());
     for (const p of user?.following || []) s.add(p.toString());
     return s;
-  }, [user?.followers, user?.following]);
+  }, [user?.following]);
 
+  /**
+   * Discover: users you DON'T follow yet (may include your followers)
+   * - not you
+   * - not already a chat peer
+   * - not already followed by you
+   */
   const discoverUsers = useMemo(() => {
-    return allUsers
+    return (allUsers || [])
       .filter((u) => {
         const k = u.user_principal.toString();
-        if (k === myPrincipalKey) return false;
+        if (k === myKey) return false;
         if (peerKeys.includes(k)) return false;
-        if (connectionKeySet.has(k)) return false;
+        if (followingKeys.has(k)) return false;
         return true;
       })
       .slice(0, 30);
-  }, [allUsers, myPrincipalKey, peerKeys, connectionKeySet]);
+  }, [allUsers, myKey, peerKeys, followingKeys]);
 
-  const handleFollow = async (targetPrincipal) => {
-    const key = targetPrincipal.toString();
+  const handleFollow = async (principal) => {
+    const key = principal.toString();
     if (followLoading[key]) return;
     setFollowLoading((m) => ({ ...m, [key]: true }));
     try {
-      await actor.follow_user(targetPrincipal);
-      if (user) user.following = [...(user.following || []), targetPrincipal];
+      await actor.follow_user(principal);
       onRefresh && onRefresh();
     } catch (e) {
       console.error(e);
@@ -111,10 +130,10 @@ export default function ConversationList({
     }
   };
 
-  // Mobile-friendly full height using 100svh; desktop matches card height
   return (
-    <div className="flex flex-col h-[calc(100svh-220px)] md:h-[calc(100vh-220px)]">
-      {/* Sticky header */}
+    // ✅ Fixed width on md+ so it never overlays the chat pane
+    <div className="flex flex-col h-[calc(100svh-220px)] md:h-[calc(100vh-220px)] md:w-[360px] md:max-w-[360px] md:flex-none md:pr-4">
+      {/* Header */}
       <div className="p-4 border-b font-semibold flex items-center justify-between bg-white sticky top-0 z-10">
         <span>Messages</span>
         <button onClick={onRefresh} className="text-sm text-blue-600">
@@ -139,15 +158,17 @@ export default function ConversationList({
                 aria-label={`Open chat with ${prof?.name || key.slice(0, 8)}`}
               >
                 <img
-                  className="w-10 h-10 rounded-full border object-cover"
+                  className="w-10 h-10 rounded-full border object-cover shrink-0"
                   src={prof?.profile_image || "/no-profile.jpg"}
                   alt=""
                 />
-                <div className="text-left">
-                  <div className="font-medium truncate max-w-[160px] md:max-w-[220px]">
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="font-medium truncate">
                     {prof?.name || key.slice(0, 8) + "..."}
                   </div>
-                  <div className="text-xs text-gray-500">@{key.slice(0, 12)}</div>
+                  <div className="text-xs text-gray-500 truncate">
+                    @{key.slice(0, 12)}
+                  </div>
                 </div>
               </button>
             );
@@ -156,7 +177,7 @@ export default function ConversationList({
           <div className="p-4 text-sm text-gray-500">No conversations yet.</div>
         )}
 
-        {/* Start a new chat */}
+        {/* Start a new chat (followers ∪ following − peers) */}
         <div className="p-4 pt-2">
           <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
             Start a new chat
@@ -166,39 +187,49 @@ export default function ConversationList({
             const prof = starterProfiles[key];
             const p = startersPrincipals.find((pp) => pp.toString() === key);
             return (
-              <button
+              <div
                 key={key}
-                onClick={() => onSelect(p)}
-                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
+                className="w-full grid grid-cols-[2.25rem,1fr] items-center gap-x-3 p-2 rounded-lg hover:bg-gray-50"
               >
+                {/* avatar spans rows */}
                 <img
-                  className="w-8 h-8 rounded-full border object-cover"
+                  className="w-9 h-9 rounded-full border object-cover shrink-0 col-start-1 row-span-2"
                   src={prof?.profile_image || "/no-profile.jpg"}
                   alt=""
                 />
-                <div className="text-left">
-                  <div className="text-sm font-medium truncate max-w-[180px]">
+                {/* name/handle */}
+                <div className="col-start-2 min-w-0 text-left">
+                  <div className="text-sm font-medium truncate">
                     {prof?.name || key.slice(0, 8) + "..."}
                   </div>
-                  <div className="text-[11px] text-gray-500">@{key.slice(0, 12)}</div>
+                  <div className="text-[11px] text-gray-500 truncate">
+                    @{key.slice(0, 12)}
+                  </div>
                 </div>
-                <span className="ml-auto text-xs px-2 py-1 rounded-full border">
-                  Message
-                </span>
-              </button>
+                {/* action under text, left-aligned → never overlaps divider */}
+                <div className="col-start-2 mt-1">
+                  <button
+                    className="text-xs px-3 py-1 rounded-full border hover:bg-gray-100"
+                    onClick={() => onSelect(p)}
+                    title="Start chat"
+                  >
+                    Message
+                  </button>
+                </div>
+              </div>
             );
           })}
         </div>
 
-        {/* Discover */}
+        {/* Discover (users you DON'T follow yet → show follow CTA) */}
         <div className="px-4 pb-6">
           <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
-            Start conversation by following them
+            Start conversation by following a user
           </div>
 
           {discoverUsers.length === 0 ? (
             <div className="text-sm text-gray-500">
-              Looks like you’re connected with everyone here. Try searching users elsewhere.
+              Looks like you’re connected with everyone.
             </div>
           ) : (
             discoverUsers.map((u) => {
@@ -207,29 +238,33 @@ export default function ConversationList({
               return (
                 <div
                   key={key}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
+                  className="w-full grid grid-cols-[2.25rem,1fr] items-center gap-x-3 p-2 rounded-lg hover:bg-gray-50"
                 >
                   <img
-                    className="w-8 h-8 rounded-full border object-cover"
+                    className="w-9 h-9 rounded-full border object-cover shrink-0 col-start-1 row-span-2"
                     src={u.profile_image || "/no-profile.jpg"}
                     alt=""
                   />
-                  <div className="text-left">
-                    <div className="text-sm font-medium truncate max-w-[180px]">
+                  <div className="col-start-2 min-w-0 text-left">
+                    <div className="text-sm font-medium truncate">
                       {u.name || key.slice(0, 8) + "..."}
                     </div>
-                    <div className="text-[11px] text-gray-500">@{key.slice(0, 12)}</div>
+                    <div className="text-[11px] text-gray-500 truncate">
+                      @{key.slice(0, 12)}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => handleFollow(u.user_principal)}
-                    disabled={busy}
-                    className={`ml-auto text-xs px-3 py-1 rounded-full border ${
-                      busy ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-100"
-                    }`}
-                    title="Follow to enable messaging"
-                  >
-                    {busy ? "Following..." : "Follow to message"}
-                  </button>
+                  <div className="col-start-2 mt-1">
+                    <button
+                      onClick={() => handleFollow(u.user_principal)}
+                      disabled={busy}
+                      className={`text-xs px-3 py-1 rounded-full border ${
+                        busy ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-100"
+                      }`}
+                      title="Follow to enable messaging"
+                    >
+                      {busy ? "Following..." : "Follow to message"}
+                    </button>
+                  </div>
                 </div>
               );
             })

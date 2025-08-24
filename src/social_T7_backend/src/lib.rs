@@ -6,9 +6,7 @@ use std::collections::BTreeMap;
 // ---------- Candid interface export ----------
 candid::export_service!();
 
-// =====================
 // Data Structures
-// =====================
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct Message {
@@ -74,10 +72,7 @@ pub enum NotificationType {
     Message,
 }
 
-// =====================
 // Storage
-// =====================
-
 thread_local! {
     // Core app storages
     static USERS: RefCell<BTreeMap<Principal, UserProfile>> = RefCell::new(BTreeMap::new());
@@ -93,9 +88,7 @@ thread_local! {
     static MESSAGE_COUNTER: RefCell<u64> = RefCell::new(0);
 }
 
-// =====================
 // Helpers
-// =====================
 
 fn convo_key(a: Principal, b: Principal) -> (Principal, Principal) {
     if a.to_text() <= b.to_text() { (a, b) } else { (b, a) }
@@ -149,9 +142,7 @@ fn can_dm(me: Principal, to: Principal) -> bool {
     })
 }
 
-// =====================
 // User Management
-// =====================
 
 #[ic_cdk::update]
 pub fn register_user(name: String, bio: String, profile_image: String, cover_image: String) -> Result<UserProfile, String> {
@@ -214,9 +205,7 @@ pub fn update_profile(name: String, bio: String, profile_image: String, cover_im
     })
 }
 
-// =====================
 // Messaging
-// =====================
 
 /// Send a message (allowed if either side follows the other)
 #[ic_cdk::update]
@@ -316,9 +305,7 @@ pub fn get_inbox() -> Vec<Principal> {
     })
 }
 
-// =====================
 // Posts
-// =====================
 
 #[ic_cdk::update]
 pub fn create_post(content: String, image: Option<String>, video: Option<String>) -> Result<Post, String> {
@@ -522,9 +509,7 @@ pub fn edit_post(post_id: u64, new_content: String, new_image: Option<String>, n
     })
 }
 
-// =====================
 // Follow System
-// =====================
 
 #[ic_cdk::update]
 pub fn follow_user(target_principal: Principal) -> Result<String, String> {
@@ -609,9 +594,7 @@ pub fn get_following(user_principal: Principal) -> Vec<Principal> {
     })
 }
 
-// =====================
 // Notifications
-// =====================
 
 fn add_notification_internal(
     sender: Principal,
@@ -668,9 +651,7 @@ pub fn mark_notification_read(notification_id: u64) -> Result<String, String> {
     })
 }
 
-// =====================
 // Explore / Feed
-// =====================
 
 #[ic_cdk::query]
 pub fn get_all_users() -> Vec<UserProfile> {
@@ -722,9 +703,7 @@ pub fn get_feed() -> Vec<Post> {
     })
 }
 
-// =====================
 // Candid (for dfx generate)
-// =====================
 
 #[ic_cdk::query(name = "__get_candid_interface_tmp_hack")]
 fn export_candid() -> String { __export_service() }
