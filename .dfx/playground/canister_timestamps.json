@@ -1,5 +1,9 @@
 {
+  "internet_identity": {},
   "social_T7_backend": {
-    "playground": "2025-08-26T07:44:28.129517375Z"
+    "playground": "2025-08-26T11:33:42.464740764Z"
+  },
+  "social_T7_frontend": {
+    "playground": "2025-08-26T11:34:03.669299873Z"
   }
 }

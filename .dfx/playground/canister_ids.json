@@ -1,5 +1,9 @@
 {
+  "internet_identity": {},
   "social_T7_backend": {
-    "playground": "zydb5-siaaa-aaaab-qacba-cai"
+    "playground": "3f6pv-baaaa-aaaab-qacoq-cai"
+  },
+  "social_T7_frontend": {
+    "playground": "6zfvq-kiaaa-aaaab-qacra-cai"
   }
 }

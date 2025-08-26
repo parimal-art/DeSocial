@@ -431,7 +431,7 @@ type WebAuthnCredential = record {
   pubkey : PublicKey;
   credential_id : CredentialId;
 };
-service : {
+service : (opt InternetIdentityInit) -> {
   acknowledge_entries : (nat64) -> ();
   add : (UserNumber, DeviceData) -> ();
   add_tentative_device : (UserNumber, DeviceData) -> (

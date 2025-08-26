@@ -174,17 +174,19 @@ export default function ConversationList({
           {starterKeys.map((key) => {
             const prof = starterProfiles[key];
             const p = startersPrincipals.find((pp) => pp.toString() === key);
+
+            // 🔥 CHANGED: grid -> flex row with right-aligned button (like "Follow to message")
             return (
               <div
                 key={key}
-                className="w-full grid grid-cols-[2.25rem,1fr] items-center gap-x-3 p-2 rounded-lg hover:bg-gray-50"
+                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
               >
                 <img
-                  className="w-9 h-9 rounded-full border object-cover shrink-0 col-start-1 row-span-2"
+                  className="w-9 h-9 rounded-full border object-cover shrink-0"
                   src={prof?.profile_image || "/no-profile.jpg"}
                   alt=""
                 />
-                <div className="col-start-2 min-w-0 text-left">
+                <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium truncate">
                     {prof?.name || key.slice(0, 8) + "..."}
                   </div>
@@ -192,15 +194,15 @@ export default function ConversationList({
                     @{key.slice(0, 12)}
                   </div>
                 </div>
-                <div className="col-start-2 mt-1">
-                  <button
-                    className="text-xs px-3 py-1 rounded-full border hover:bg-gray-100"
-                    onClick={() => onSelect(p)}
-                    title="Start chat"
-                  >
-                    Message
-                  </button>
-                </div>
+
+                {/* ✅ Message button on the RIGHT (same placement as Follow to message) */}
+                <button
+                  className="text-xs px-3 py-1 rounded-full border hover:bg-gray-100 ml-2 shrink-0"
+                  onClick={() => onSelect(p)}
+                  title="Start chat"
+                >
+                  Message
+                </button>
               </div>
             );
           })}
@@ -231,9 +233,6 @@ export default function ConversationList({
 
             return (
               <>
-                <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
-                  Start conversation by following a user
-                </div>
                 {discoverUsers.map((u) => {
                   const key = u.user_principal.toString();
                   const busy = !!followLoading[key];
@@ -256,7 +255,7 @@ export default function ConversationList({
                         </div>
                       </div>
 
-                      {/* 👇 button inline right side */}
+                      {/* already inline on the right */}
                       <button
                         onClick={() => handleFollow(u.user_principal)}
                         disabled={busy}
