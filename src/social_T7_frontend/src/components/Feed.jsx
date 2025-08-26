@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PostCard from './PostCard';
 import { RefreshCw } from 'lucide-react';
 
@@ -7,11 +7,16 @@ const Feed = ({ actor, user, onUserProfileView }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // If your scroll container is window, this ref isn't needed.
+  const scrollContainerRef = useRef(null);
+
   useEffect(() => {
     loadFeed();
   }, [actor]);
 
   const loadFeed = async () => {
+    // preserve scroll position (window-level)
+    const y = window.scrollY;
     try {
       setLoading(true);
       const feedPosts = await actor.get_feed();
@@ -20,6 +25,7 @@ const Feed = ({ actor, user, onUserProfileView }) => {
       console.error('Error loading feed:', error);
     } finally {
       setLoading(false);
+      requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "instant" }));
     }
   };
 
@@ -54,7 +60,7 @@ const Feed = ({ actor, user, onUserProfileView }) => {
   }
 
   return (
-    <div className="p-4 lg:p-6">
+    <div ref={scrollContainerRef} className="p-4 lg:p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Your Feed</h1>
@@ -78,7 +84,7 @@ const Feed = ({ actor, user, onUserProfileView }) => {
               actor={actor}
               currentUser={user}
               onUserProfileView={onUserProfileView}
-              onPostUpdate={loadFeed}
+              onPostUpdate={loadFeed} // still used for edit/delete/like if needed
             />
           ))
         ) : (

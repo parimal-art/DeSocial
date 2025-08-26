@@ -4,13 +4,7 @@ import CommentBox from "./CommentBox";
 import FollowButton from "./FollowButton";
 import LikeButton from "./LikeButton";
 
-const PostCard = ({
-  post,
-  actor,
-  currentUser,
-  onUserProfileView,
-  onPostUpdate,
-}) => {
+const PostCard = ({ post, actor, currentUser, onUserProfileView, onPostUpdate }) => {
   const [postAuthor, setPostAuthor] = useState(null);
   const [originalAuthor, setOriginalAuthor] = useState(null);
   const [showComments, setShowComments] = useState(false);
@@ -19,9 +13,11 @@ const PostCard = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
 
-  useEffect(() => {
-    loadPostAuthor();
-  }, [post.post_id]);
+  // local copy to update comments without reloading feed
+  const [localPost, setLocalPost] = useState(post);
+  useEffect(() => setLocalPost(post), [post.post_id, post.comments.length]);
+
+  useEffect(() => { loadPostAuthor(); }, [post.post_id]);
 
   const loadPostAuthor = async () => {
     try {
@@ -30,9 +26,7 @@ const PostCard = ({
 
       if (post.original_post_id && post.reposted_by) {
         const originalPosts = await actor.get_all_posts();
-        const original = originalPosts.find(
-          (p) => p.post_id === post.original_post_id[0]
-        );
+        const original = originalPosts.find((p) => p.post_id === post.original_post_id[0]);
         if (original) {
           const origAuthor = await actor.get_user(original.author);
           if (origAuthor[0]) setOriginalAuthor(origAuthor[0]);
@@ -102,11 +96,8 @@ const PostCard = ({
 
   const formatDate = (ts) => {
     const date = new Date(Number(ts) / 1000000);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`;
-  };
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    };
 
   if (!postAuthor) {
     return (
@@ -127,6 +118,15 @@ const PostCard = ({
     currentUser.user_principal.toString();
 
   const displayAuthor = originalAuthor ?? postAuthor;
+
+  // ✅ close panel after successful comment
+  const handleCommentAdded = (newComment, ok) => {
+    setLocalPost((p) => ({
+      ...p,
+      comments: [...(p.comments || []), newComment],
+    }));
+    if (ok) setShowComments(false); // auto-close on success
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
@@ -169,9 +169,7 @@ const PostCard = ({
             <div className="ml-3 flex-1">
               <div className="flex items-center">
                 <button
-                  onClick={() =>
-                    onUserProfileView(displayAuthor.user_principal)
-                  }
+                  onClick={() => onUserProfileView(displayAuthor.user_principal)}
                   className="font-semibold text-gray-900 hover:text-blue-600"
                 >
                   {displayAuthor.name}
@@ -181,16 +179,10 @@ const PostCard = ({
                 </span>
               </div>
               <div className="flex items-center mt-1">
-                <time className="text-sm text-gray-500">
-                  {formatDate(post.created_at)}
-                </time>
+                <time className="text-sm text-gray-500">{formatDate(post.created_at)}</time>
                 {!isOwner && (
                   <div className="ml-3">
-                    <FollowButton
-                      actor={actor}
-                      targetUserId={displayAuthor.user_principal}
-                      size="sm"
-                    />
+                    <FollowButton actor={actor} targetUserId={displayAuthor.user_principal} size="sm" />
                   </div>
                 )}
               </div>
@@ -234,63 +226,39 @@ const PostCard = ({
                 onChange={(e) => setEditedContent(e.target.value)}
               />
               <div className="mt-2 flex gap-2">
-                <button
-                  onClick={handleSaveEdit}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded"
-                >
+                <button onClick={handleSaveEdit} className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">
                   Save
                 </button>
-                <button
-                  onClick={handleCancelEdit}
-                  className="bg-gray-200 hover:bg-gray-300 text-sm px-3 py-1 rounded"
-                >
+                <button onClick={handleCancelEdit} className="bg-gray-200 hover:bg-gray-300 text-sm px-3 py-1 rounded">
                   Cancel
                 </button>
               </div>
             </>
           ) : (
-            post.content && (
-              <p className="text-gray-900 text-base leading-relaxed mb-4">
-                {post.content}
-              </p>
-            )
+            post.content && <p className="text-gray-900 text-base leading-relaxed mb-4">{post.content}</p>
           )}
 
           {post.image?.[0] && (
             <div className="rounded-xl overflow-hidden mb-4">
-              <img
-                src={post.image[0]}
-                alt="Post content"
-                className="w-full h-auto object-contain"
-                style={{ maxHeight: "96vh" }}
-              />
+              <img src={post.image[0]} alt="Post content" className="w-full h-auto object-contain" style={{ maxHeight: "96vh" }} />
             </div>
           )}
           {post.video?.[0] && (
             <div className="rounded-xl overflow-hidden mb-4">
-              <video
-                src={post.video[0]}
-                controls
-                className="w-full h-auto max-h-96"
-              />
+              <video src={post.video[0]} controls className="w-full h-auto max-h-96" />
             </div>
           )}
         </div>
 
-        {/* Post Actions */}
+        {/* Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-          <LikeButton
-            post={post}
-            actor={actor}
-            currentUser={currentUser}
-            onPostUpdate={onPostUpdate}
-          />
+          <LikeButton post={post} actor={actor} currentUser={currentUser} onPostUpdate={onPostUpdate} />
           <button
             onClick={() => setShowComments((v) => !v)}
             className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50"
           >
             <MessageCircle className="h-5 w-5" />
-            <span className="text-sm font-medium">{post.comments.length}</span>
+            <span className="text-sm font-medium">{localPost.comments.length}</span>
           </button>
           <button
             onClick={handleRepost}
@@ -309,10 +277,10 @@ const PostCard = ({
             <CommentBox
               actor={actor}
               postId={post.post_id}
-              comments={post.comments}
+              comments={localPost.comments}
               currentUser={currentUser}
-              onCommentAdded={onPostUpdate}
               onUserProfileView={onUserProfileView}
+              onCommentAdded={handleCommentAdded} // auto-close handled here
             />
           </div>
         )}
@@ -321,11 +289,10 @@ const PostCard = ({
   );
 };
 
-const areEqual = (prevProps, nextProps) =>
-  prevProps.post.post_id === nextProps.post.post_id &&
-  prevProps.post.likes.length === nextProps.post.likes.length &&
-  prevProps.post.comments.length === nextProps.post.comments.length &&
-  prevProps.currentUser.user_principal.toString() ===
-    nextProps.currentUser.user_principal.toString();
+const areEqual = (prev, next) =>
+  prev.post.post_id === next.post.post_id &&
+  prev.post.likes.length === next.post.likes.length &&
+  prev.post.comments.length === next.post.comments.length &&
+  prev.currentUser.user_principal.toString() === next.currentUser.user_principal.toString();
 
 export default memo(PostCard, areEqual);

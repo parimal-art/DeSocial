@@ -1,15 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 /**
- * ConversationList.jsx
- *
  * Props:
  *  - actor: { get_user, get_all_users, follow_user }
  *  - user:  { user_principal, followers: Principal[], following: Principal[] }
- *  - peers: Principal[]                // existing conversation peers
+ *  - peers: Principal[]
  *  - activePeer: Principal | null
- *  - onSelect: (principal) => void     // open chat with selected user
- *  - onRefresh: () => void             // refetch user + peers from backend
+ *  - onSelect: (principal) => void
+ *  - onRefresh: () => void
  */
 export default function ConversationList({
   actor,
@@ -27,7 +25,7 @@ export default function ConversationList({
   const myKey = user?.user_principal?.toString() || "";
   const peerKeys = useMemo(() => peers.map((p) => p.toString()), [peers]);
 
-  /** followers ∪ following − peers → quick-start list */
+  // people you follow OR who follow you, but not already in peers list
   const startersPrincipals = useMemo(() => {
     const merged = [...(user?.followers || []), ...(user?.following || [])];
     const seen = new Set();
@@ -47,7 +45,6 @@ export default function ConversationList({
     [startersPrincipals]
   );
 
-  /** fetch profiles for peers */
   useEffect(() => {
     (async () => {
       const map = {};
@@ -61,7 +58,6 @@ export default function ConversationList({
     })();
   }, [actor, peers]);
 
-  /** fetch profiles for starters */
   useEffect(() => {
     (async () => {
       if (!startersPrincipals.length) {
@@ -79,7 +75,6 @@ export default function ConversationList({
     })();
   }, [actor, startersPrincipals]);
 
-  /** fetch all users for Discover */
   useEffect(() => {
     (async () => {
       try {
@@ -91,19 +86,13 @@ export default function ConversationList({
     })();
   }, [actor]);
 
-  /** set of people YOU already follow (not followers) */
   const followingKeys = useMemo(() => {
     const s = new Set();
     for (const p of user?.following || []) s.add(p.toString());
     return s;
   }, [user?.following]);
 
-  /**
-   * Discover: users you DON'T follow yet (may include your followers)
-   * - not you
-   * - not already a chat peer
-   * - not already followed by you
-   */
+  // users you could follow to start a conversation
   const discoverUsers = useMemo(() => {
     return (allUsers || [])
       .filter((u) => {
@@ -122,18 +111,18 @@ export default function ConversationList({
     setFollowLoading((m) => ({ ...m, [key]: true }));
     try {
       await actor.follow_user(principal);
-      onRefresh && onRefresh();
+      // optimistic: remove from discover immediately
+      setAllUsers((arr) => arr.filter((u) => u.user_principal.toString() !== key));
+      onRefresh && onRefresh(); // parent reloads me + inbox
     } catch (e) {
-      console.error(e);
+      console.error("follow_user failed", e);
     } finally {
       setFollowLoading((m) => ({ ...m, [key]: false }));
     }
   };
 
   return (
-    // ✅ Fixed width on md+ so it never overlays the chat pane
     <div className="flex flex-col h-[calc(100svh-220px)] md:h-[calc(100vh-220px)] md:w-[360px] md:max-w-[360px] md:flex-none md:pr-4">
-      {/* Header */}
       <div className="p-4 border-b font-semibold flex items-center justify-between bg-white sticky top-0 z-10">
         <span>Messages</span>
         <button onClick={onRefresh} className="text-sm text-blue-600">
@@ -141,7 +130,6 @@ export default function ConversationList({
         </button>
       </div>
 
-      {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto">
         {/* Existing conversations */}
         {peers.length > 0 ? (
@@ -177,7 +165,7 @@ export default function ConversationList({
           <div className="p-4 text-sm text-gray-500">No conversations yet.</div>
         )}
 
-        {/* Start a new chat (followers ∪ following − peers) */}
+        {/* Quick start with followers/following */}
         <div className="p-4 pt-2">
           <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
             Start a new chat
@@ -191,13 +179,11 @@ export default function ConversationList({
                 key={key}
                 className="w-full grid grid-cols-[2.25rem,1fr] items-center gap-x-3 p-2 rounded-lg hover:bg-gray-50"
               >
-                {/* avatar spans rows */}
                 <img
                   className="w-9 h-9 rounded-full border object-cover shrink-0 col-start-1 row-span-2"
                   src={prof?.profile_image || "/no-profile.jpg"}
                   alt=""
                 />
-                {/* name/handle */}
                 <div className="col-start-2 min-w-0 text-left">
                   <div className="text-sm font-medium truncate">
                     {prof?.name || key.slice(0, 8) + "..."}
@@ -206,7 +192,6 @@ export default function ConversationList({
                     @{key.slice(0, 12)}
                   </div>
                 </div>
-                {/* action under text, left-aligned → never overlaps divider */}
                 <div className="col-start-2 mt-1">
                   <button
                     className="text-xs px-3 py-1 rounded-full border hover:bg-gray-100"
@@ -221,54 +206,75 @@ export default function ConversationList({
           })}
         </div>
 
-        {/* Discover (users you DON'T follow yet → show follow CTA) */}
+        {/* DISCOVER / FOLLOW TO MESSAGE */}
         <div className="px-4 pb-6">
-          <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
-            Start conversation by following a user
-          </div>
+          {(() => {
+            const eligibleCount = (allUsers || []).filter((u) => {
+              const k = u.user_principal.toString();
+              return k !== myKey && !peerKeys.includes(k);
+            }).length;
 
-          {discoverUsers.length === 0 ? (
-            <div className="text-sm text-gray-500">
-              Looks like you’re connected with everyone.
-            </div>
-          ) : (
-            discoverUsers.map((u) => {
-              const key = u.user_principal.toString();
-              const busy = !!followLoading[key];
+            const noneLeftToFollow =
+              eligibleCount > 0 && discoverUsers.length === 0;
+
+            if (noneLeftToFollow) {
               return (
-                <div
-                  key={key}
-                  className="w-full grid grid-cols-[2.25rem,1fr] items-center gap-x-3 p-2 rounded-lg hover:bg-gray-50"
-                >
-                  <img
-                    className="w-9 h-9 rounded-full border object-cover shrink-0 col-start-1 row-span-2"
-                    src={u.profile_image || "/no-profile.jpg"}
-                    alt=""
-                  />
-                  <div className="col-start-2 min-w-0 text-left">
-                    <div className="text-sm font-medium truncate">
-                      {u.name || key.slice(0, 8) + "..."}
-                    </div>
-                    <div className="text-[11px] text-gray-500 truncate">
-                      @{key.slice(0, 12)}
-                    </div>
-                  </div>
-                  <div className="col-start-2 mt-1">
-                    <button
-                      onClick={() => handleFollow(u.user_principal)}
-                      disabled={busy}
-                      className={`text-xs px-3 py-1 rounded-full border ${
-                        busy ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-100"
-                      }`}
-                      title="Follow to enable messaging"
-                    >
-                      {busy ? "Following..." : "Follow to message"}
-                    </button>
-                  </div>
+                <div className="text-sm text-gray-500">
+                  Looks like you’re connected with everyone.
                 </div>
               );
-            })
-          )}
+            }
+
+            if (discoverUsers.length === 0) {
+              return null;
+            }
+
+            return (
+              <>
+                <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+                  Start conversation by following a user
+                </div>
+                {discoverUsers.map((u) => {
+                  const key = u.user_principal.toString();
+                  const busy = !!followLoading[key];
+                  return (
+                    <div
+                      key={key}
+                      className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
+                    >
+                      <img
+                        className="w-9 h-9 rounded-full border object-cover shrink-0"
+                        src={u.profile_image || "/no-profile.jpg"}
+                        alt=""
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate">
+                          {u.name || key.slice(0, 8) + "..."}
+                        </div>
+                        <div className="text-[11px] text-gray-500 truncate">
+                          @{key.slice(0, 12)}
+                        </div>
+                      </div>
+
+                      {/* 👇 button inline right side */}
+                      <button
+                        onClick={() => handleFollow(u.user_principal)}
+                        disabled={busy}
+                        className={`text-xs px-3 py-1 rounded-full border ml-2 shrink-0 ${
+                          busy
+                            ? "opacity-60 cursor-not-allowed"
+                            : "hover:bg-gray-100"
+                        }`}
+                        title="Follow to enable messaging"
+                      >
+                        {busy ? "Following..." : "Follow to message"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>

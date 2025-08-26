@@ -5,7 +5,8 @@ import ChatWindow from "./ChatWindow";
 export default function Messenger({ actor, user }) {
   const [peers, setPeers] = useState([]);
   const [activePeer, setActivePeer] = useState(null);
-  const [isMobileChat, setIsMobileChat] = useState(false);
+  const [isMobileChat, setIsMobileChat] = useState(false); // mobile default = list
+  const [me, setMe] = useState(user);
   const timer = useRef(null);
 
   const loadInbox = async () => {
@@ -13,30 +14,52 @@ export default function Messenger({ actor, user }) {
       const list = await actor.get_inbox();
       setPeers(Array.isArray(list) ? list : []);
     } catch (e) {
-      console.error(e);
+      console.error("get_inbox failed", e);
     }
   };
 
+  const loadMe = async () => {
+    try {
+      const myP = user?.user_principal;
+      if (!myP) return;
+      const res = await actor.get_user(myP);
+      const u = res && res[0] ? { ...res[0], user_principal: myP } : me;
+      setMe(u || me);
+    } catch (e) {
+      console.error("get_user(self) failed", e);
+    }
+  };
+
+  const refreshAll = async () => {
+    await Promise.all([loadInbox(), loadMe()]);
+  };
+
   useEffect(() => {
+    // mobile: start with list view visible
     if (typeof window !== "undefined" && window.innerWidth < 576) {
-      setIsMobileChat(true);
+      setIsMobileChat(false);
     }
   }, []);
 
   useEffect(() => {
-    loadInbox();
-    timer.current && clearInterval(timer.current);
+    refreshAll();
+    // poll inbox lightly
+    if (timer.current) clearInterval(timer.current);
     timer.current = setInterval(loadInbox, 5000);
     return () => timer.current && clearInterval(timer.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSelect = (p) => {
     setActivePeer(p);
-    setIsMobileChat(true);
+    // mobile switch to chat pane
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setIsMobileChat(true);
+    }
   };
+
   const handleBackToList = () => setIsMobileChat(false);
 
-  // only for mobile view toggling (desktop always shows both)
   const isDesktop = useMemo(() => {
     if (typeof window === "undefined") return true;
     return window.matchMedia("(min-width: 768px)").matches;
@@ -51,26 +74,31 @@ export default function Messenger({ actor, user }) {
         </p>
       </div>
 
-      {/* ✅ Desktop: pure grid (no absolute). Mobile: toggle which pane to show */}
       <div className="rounded-xl border bg-white overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-[360px,1fr]">
-          {/* LEFT: list (fixed width on md+) */}
+          {/* LEFT: list */}
           <div className={isMobileChat && !isDesktop ? "hidden md:block" : "block"}>
             <ConversationList
               actor={actor}
-              user={user}
+              user={me}
               peers={peers}
               activePeer={activePeer}
               onSelect={handleSelect}
-              onRefresh={loadInbox}
+              onRefresh={refreshAll} // refresh me + inbox after follow
             />
           </div>
 
-          {/* RIGHT: thread (gets the divider) */}
-          <div className={(!isMobileChat && !isDesktop) ? "hidden md:block" : "block md:border-l md:border-gray-200"}>
+          {/* RIGHT: thread */}
+          <div
+            className={
+              (!isMobileChat && !isDesktop)
+                ? "hidden md:block"
+                : "block md:border-l md:border-gray-200"
+            }
+          >
             <ChatWindow
               actor={actor}
-              user={user}
+              user={me}
               peer={activePeer}
               onBack={handleBackToList}
               isMobileChat={isMobileChat && !isDesktop}

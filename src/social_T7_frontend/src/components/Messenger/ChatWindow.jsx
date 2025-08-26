@@ -1,18 +1,21 @@
+// ChatWindow.jsx
 import React, { useEffect, useRef, useState } from "react";
 import MessageBubble from "./MessageBubble";
 
 export default function ChatWindow({ actor, user, peer, onBack, isMobileChat }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
+  const [peerProfile, setPeerProfile] = useState(null);
   const timer = useRef(null);
   const bottomRef = useRef(null);
 
   const meStr = user?.user_principal?.toString?.() || "";
+  const peerStr = peer?.toString?.() || "";
 
   const unwrap = (res) => (Array.isArray(res) ? res : (res?.Ok ?? res ?? []));
   const toBig = (v) => (typeof v === "bigint" ? v : BigInt(Number(v || 0)));
 
-  const load = async () => {
+  const loadConversation = async () => {
     if (!peer) return;
     try {
       const raw = await actor.get_conversation(peer);
@@ -20,6 +23,7 @@ export default function ChatWindow({ actor, user, peer, onBack, isMobileChat }) 
       const arr = Array.isArray(list) ? list : [];
       setMessages(arr);
 
+      // mark last incoming as seen
       const incoming = arr.filter((m) => m?.to?.toString?.() === meStr);
       if (incoming.length > 0) {
         const last = incoming[incoming.length - 1];
@@ -30,13 +34,28 @@ export default function ChatWindow({ actor, user, peer, onBack, isMobileChat }) 
     }
   };
 
+  const loadPeerProfile = async () => {
+    if (!peer) return setPeerProfile(null);
+    try {
+      const res = await actor.get_user(peer);
+      setPeerProfile(res && res[0] ? res[0] : null);
+    } catch {
+      setPeerProfile(null);
+    }
+  };
+
   useEffect(() => {
-    load();
+    loadPeerProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peerStr]);
+
+  useEffect(() => {
+    loadConversation();
     if (timer.current) clearInterval(timer.current);
-    timer.current = setInterval(load, 3000);
+    timer.current = setInterval(loadConversation, 3000);
     return () => timer.current && clearInterval(timer.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [peer?.toString?.()]);
+  }, [peerStr]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,14 +71,14 @@ export default function ChatWindow({ actor, user, peer, onBack, isMobileChat }) 
         return;
       }
       setText("");
-      await load();
+      await loadConversation();
     } catch (e) {
       console.error("send error", e);
       alert("Failed to send message. Check follower relationship and try again.");
     }
   };
 
-  // heights for mobile/desktop, avoid attaching to top
+  // heights for mobile/desktop
   const wrapHeight = "h-[calc(100svh-220px)] md:h-[calc(100vh-220px)]";
 
   if (!peer) {
@@ -68,25 +87,44 @@ export default function ChatWindow({ actor, user, peer, onBack, isMobileChat }) 
         Select a conversation
       </div>
     );
-    }
+  }
 
   const listSafe = Array.isArray(messages) ? messages : [];
+  const displayName =
+    peerProfile?.name || (peerStr ? peerStr.slice(0, 8) + "..." : "User");
+  const handleStr = "@" + (peerProfile?.user_principal?.toString?.()?.slice(0, 12) || peerStr.slice(0, 12));
+  const avatarSrc = peerProfile?.profile_image || "/no-profile.jpg";
 
   return (
     <div className={`flex flex-col ${wrapHeight}`}>
-      {/* Sticky header */}
-      <div className="p-4 border-b font-medium bg-white sticky top-0 z-10 flex items-center gap-2">
-        {/* Mobile back */}
-        {isMobileChat && (
-          <button
-            onClick={onBack}
-            className="mr-1 inline-flex items-center justify-center rounded-lg border px-2 py-1 text-xs hover:bg-gray-50 md:hidden"
-            aria-label="Back to conversations"
-          >
-            ← Back
-          </button>
-        )}
-        <span>Chat</span>
+      {/* Sticky header with peer info */}
+      <div className="p-3 sm:p-4 border-b bg-white sticky top-0 z-10">
+        <div className="flex items-center gap-3 justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Mobile back */}
+            {isMobileChat && (
+              <button
+                onClick={onBack}
+                className="mr-1 inline-flex items-center justify-center rounded-lg border px-2 py-1 text-xs hover:bg-gray-50 md:hidden"
+                aria-label="Back to conversations"
+              >
+                ← Back
+              </button>
+            )}
+
+            <img
+              src={avatarSrc}
+              alt=""
+              className="w-8 h-8 rounded-full border shrink-0"
+            />
+            <div className="min-w-0">
+              <div className="text-sm font-medium truncate">{displayName}</div>
+              <div className="text-[11px] text-gray-500 truncate">{handleStr}</div>
+            </div>
+          </div>
+          {/* (Optional) right-side actions space */}
+          <div className="shrink-0" />
+        </div>
       </div>
 
       {/* Messages */}
@@ -97,7 +135,7 @@ export default function ChatWindow({ actor, user, peer, onBack, isMobileChat }) 
         <div ref={bottomRef} />
       </div>
 
-      {/* Input bar (always visible) */}
+      {/* Input bar */}
       <form onSubmit={send} className="p-2 sm:p-3 border-t flex gap-2 bg-white sticky bottom-0">
         <input
           className="flex-1 border rounded-xl px-3 sm:px-4 py-2"
