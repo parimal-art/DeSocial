@@ -11,6 +11,13 @@ This repository contains the full-stack dApp setup using:
 Our goal: **To build the future of open networking** 🚀  
 
 ---
+
+## 🎯 Vision
+
+DeSocial envisions a decentralized, censorship‑resistant social network where users truly own identity, data, and content—building a trustless, transparent, user‑first future for networking.
+
+---
+
 ## ❌ The Problem With Traditional Social Media
 
 Traditional social media platforms are **centralized** and come with several issues:
@@ -128,9 +135,12 @@ flowchart TD
 
 ---
 
-## 🌐 Try It Live  
-
 🚀 **Live Experience:**  
+[![ICP App Live](https://img.shields.io/badge/ICP--App-Live%20App-blue?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABgElEQVR42mNgGAWjYBSMglEwCkbBqJgFY0U0ajQaQF0Hofz///9nZiZmZgYGBsbEwPDz8DCJiYmBiYmpFzAwMPD7+LkAFZlBm5ubmBjY2NhYmJgYGBdXYO4hCVwQZShnZ+f//n9/f39hw8PDwMDAwOCj4n4GYTwTEpRIrAMjCyMTCsI5AZnA4OTk5Ni6urqWl5f/79+/f//+/X8G1KwoIwswDJCsrKyoFxcXB6OjoLywsrPb09PZPIUQaw5yD4pXEAk4msLKy8tbW1svLy+vNzc0HoQoh9QE9aNEkgQTHJBGsQzYyEuHm4e3tLWtra9vb28/MzMzn5+fnODExsYGEFZkTkGHhlALg3b179w8jIyMDAwMTExMOZmZnPz8+Ki6sDsRKTf1W5IQrQHzMoNssLgLHLAvIhcxfX1QOHEJHGZwDOr6ioKDCyMfHx8YGBgYHx9fQUUN5XegGVnGhNqDqhC9Q8AozZyqQEcEtAAAAAElFTkSuQmCC&style=for-the-badge)](https://qcein-jaaaa-aaaad-qhoxa-cai.icp0.io/)
+
+---
+
+🌐 **Project Website**  
 [![Live Site](https://img.shields.io/badge/GitHub%20Pages-Live%20App-blue?logo=github&style=for-the-badge)](https://parimal-art.github.io/DeSocial-Page/)  
 
 ---
@@ -282,6 +292,34 @@ We welcome contributions!
 - 🌟 Advanced analytics for content creators  
 
 ---
+
+## ⚠️ Remaining Challenges
+
+Even though DeSocial solves the issues of centralized platforms, being fully decentralized also brings new challenges:
+
+- 🚫 Content Misuse → Users may upload nudity, hate speech, or illegal content.
+
+- 🤖 Spam & Bots → Without central moderation, fake accounts or spam could flood the network.
+
+- 💰 Scalability Costs → Storing heavy media (images, videos) directly on-chain can be expensive.
+
+- 🧑‍🤝‍🧑 User Safety → Messaging and interactions could be misused for harassment if not moderated properly.
+
+- ⚖️ Moderation vs Freedom Dilemma → Striking a balance between free speech and responsible use is difficult.
+
+## 🛠️ Proposed Solutions
+
+- 🗳️ Community Governance (DAO-based moderation) → Instead of a single authority, users can vote/flag harmful content.
+
+- 🏷️ Content Labeling → Mark sensitive/NSFW content rather than removing it, giving users the choice to view or block.
+
+- ⭐ Reputation & Token Economics → Bad actors lose reputation/tokens; good actors earn rewards for positive contributions.
+ 
+- 🛡️ User Tools → Strong block/report system, customizable filters, and privacy settings for safety.
+
+- 📂 Hybrid Storage → Use ICP canisters for metadata + decentralized storage like IPFS/Arweave for large media, with community-driven filters.
+
+- 🧩 Filter Subscriptions → Users/communities can subscribe to moderation lists (family-friendly, strict, or free-speech).
 
 ## 🙌 Author’s Note
 
